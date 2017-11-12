@@ -17,15 +17,16 @@
  (reel)
  (let [store (:store reel), states (:states store), router (:router store)]
    (div
-    {:style (merge ui/global ui/fullscreen ui/column-center)}
+    {:style (merge ui/global ui/fullscreen ui/column-center {:align-items :stretch})}
     (comp-header)
+    (div {:style {:height 1, :background-color (hsl 0 0 84)}})
     (div
-     {:style (merge ui/flex ui/row ui/row {:width 1200, :background-color (hsl 80 0 90)})}
+     {:style (merge ui/flex ui/row ui/row {:background-color (hsl 80 0 96), :padding "8px"})}
      (comp-list (:snippets store))
+     (div {:style {:width 1, :background-color (hsl 0 0 84)}})
      (case (:name router)
        :read (comp-viewer (get-in store [:snippets (:data router)]))
        :create (cursor-> :create comp-editor states nil)
        :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
        (comp-empty)))
-    (<> pre store nil)
     (cursor-> :reel comp-reel states reel {}))))

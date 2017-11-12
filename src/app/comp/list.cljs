@@ -11,10 +11,10 @@
  comp-list
  (snippets)
  (if (empty? snippets)
-   (div {:style {:width "32%"}} (<> "No snippets"))
+   (div {:style {:width 400}} (<> "No snippets"))
    (list->
     :div
-    {:style {:width "32%"}}
+    {:style {:width 400}}
     (->> snippets
          (map
           (fn [entry]

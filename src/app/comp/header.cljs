@@ -12,8 +12,14 @@
  (div
   {:style (merge
            ui/row-center
-           {:background-color (hsl 80 80 80), :height 80, :width "100%"})}
+           {:height 48,
+            :width "100%",
+            :justify-content :flex-start,
+            :padding "0 16px",
+            :font-size 24,
+            :font-weight 100})}
   (<> "CopyCat")
+  (=< 16 nil)
   (span
    {:inner-text "Create",
     :style {:color (hsl 0 0 60)},

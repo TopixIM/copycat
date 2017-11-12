@@ -5,7 +5,10 @@
             [respo.macros :refer [defcomp cursor-> <> div button span textarea input]]
             [verbosely.core :refer [verbosely!]]
             [respo.comp.space :refer [=<]]
-            [reel.comp.reel :refer [comp-reel]]))
+            [reel.comp.reel :refer [comp-reel]]
+            [app.style :as style]))
+
+(def style-label {:width 100})
 
 (defcomp
  comp-editor
@@ -13,37 +16,39 @@
  (let [state (or (:data states)
                  {:title (or (:title snippet) ""), :content (or (:content snippet) "")})]
    (div
-    {:style ui/flex}
-    (div {} (<> "header"))
+    {:style (merge ui/flex {:padding 8})}
     (div
      {}
      (div
       {:style ui/row}
-      (div {} (<> "Title"))
+      (div {:style style-label} (<> "Title"))
       (div
        {}
        (input
-        {:style ui/input,
+        {:style style/input,
          :value (:title state),
+         :placeholder "Title",
          :on {:input (fn [e d! m!] (m! (assoc state :title (:value e))))}})))
+     (=< nil 8)
      (div
       {:style ui/row}
-      (div {} (<> "Content"))
+      (div {:style style-label} (<> "Content"))
       (div
        {}
        (textarea
-        {:style ui/input,
+        {:style (merge style/textarea {:min-width 600, :min-height 200}),
+         :placeholder "Content",
          :value (:content state),
          :on {:input (fn [e d! m!] (m! (assoc state :content (:value e))))}}))))
     (div
-     {:style (merge ui/row {:justify-content :flex-end, :padding 8})}
+     {:style (merge ui/row {:padding 8})}
      (button
-      {:style (merge ui/button {}),
+      {:style (merge style/button {}),
        :inner-text "Cancel",
        :on {:click (fn [e d! m!] (d! :router/set nil))}})
      (=< 8 nil)
      (button
-      {:style (merge ui/button {}),
+      {:style (merge style/button {}),
        :inner-text "Submit",
        :on {:click (fn [e d! m!]
               (if (some? snippet)

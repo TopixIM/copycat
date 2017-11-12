@@ -7,7 +7,7 @@
             [reel.schema :as reel-schema]))
 
 (def base-info
-  {:title "CoWorkflow",
+  {:title "CopyCat",
    :icon "http://cdn.tiye.me/logo/mvc-works.png",
    :ssr nil,
    :inline-html nil,
