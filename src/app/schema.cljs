@@ -1,4 +1,6 @@
 
 (ns app.schema )
 
-(def store {:states {}, :data 0})
+(def store {:states {}, :snippets {}, :router nil})
+
+(def snippet {:id nil, :title "", :content nil, :created-at nil, :updated-at nil})

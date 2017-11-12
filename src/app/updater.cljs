@@ -1,8 +1,13 @@
 
-(ns app.updater (:require [respo.cursor :refer [mutate]]))
+(ns app.updater (:require [respo.cursor :refer [mutate]] [app.schema :as schema]))
 
-(defn updater [store op op-data]
+(defn updater [store op op-data op-id]
   (case op
     :states (update store :states (mutate op-data))
-    :inc (update store :data (fn [x] (+ x 1)))
+    :router/set (assoc store :router op-data)
+    :snippet/create
+      (assoc-in store [:snippets op-id] (merge schema/snippet op-data {:id op-id}))
+    :snippet/update
+      (update-in store [:snippets op-id] (fn [snippet] (merge snippet op-data)))
+    :snippet/remove (update store :snippets #(dissoc % op-data))
     store))
