@@ -8,6 +8,6 @@
     :snippet/create
       (assoc-in store [:snippets op-id] (merge schema/snippet op-data {:id op-id}))
     :snippet/update
-      (update-in store [:snippets op-id] (fn [snippet] (merge snippet op-data)))
+      (update-in store [:snippets (:id op-data)] (fn [snippet] (merge snippet op-data)))
     :snippet/remove (update store :snippets #(dissoc % op-data))
     store))

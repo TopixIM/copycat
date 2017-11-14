@@ -16,7 +16,7 @@
  (let [state (or (:data states)
                  {:title (or (:title snippet) ""), :content (or (:content snippet) "")})]
    (div
-    {:style (merge ui/flex {:padding 8})}
+    {:style (merge ui/flex {:padding 16})}
     (div
      {}
      (div
@@ -41,7 +41,7 @@
          :value (:content state),
          :on {:input (fn [e d! m!] (m! (assoc state :content (:value e))))}}))))
     (div
-     {:style (merge ui/row {:padding 8})}
+     {:style (merge ui/row {:padding 16})}
      (button
       {:style (merge style/button {}),
        :inner-text "Cancel",

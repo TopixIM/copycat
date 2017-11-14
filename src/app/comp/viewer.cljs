@@ -11,7 +11,7 @@
  comp-viewer
  (snippet)
  (div
-  {:style (merge ui/flex {:padding 8})}
+  {:style (merge ui/flex {:padding 16})}
   (div {} (<> (:title snippet)))
   (div
    {:style ui/row}
