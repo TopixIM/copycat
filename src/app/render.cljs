@@ -19,8 +19,7 @@
    ""
    (merge
     base-info
-    {:styles ["http://localhost:8100/main.css"],
-     :scripts ["/browser/lib.js" "/browser/main.js"]})))
+    {:styles ["http://localhost:8100/main.css"], :scripts ["/lib.js" "/main.js"]})))
 
 (def preview? (= "preview" js/process.env.prod))
 
@@ -28,7 +27,7 @@
   (let [reel (-> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store))
         html-content (make-string (comp-container reel))
         assets (read-string (slurp "dist/assets.edn"))
-        cdn (if preview? "" "http://cdn.tiye.me/coworkflow/")
+        cdn (if preview? "" "http://cdn.tiye.me/copycat/")
         prefix-cdn (fn [x] (str cdn x))]
     (make-page
      html-content

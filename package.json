@@ -4,8 +4,8 @@
   "description": "Stack Workflow",
   "main": "index.js",
   "scripts": {
-    "cdn": "rsync -avr --progress dist/* tiye.me:cdn/coworkflow",
-    "tiye": "rsync -avr --progress dist/{index.html,manifest.json} tiye.me:repo/mvc-works/coworkflow/",
+    "cdn": "rsync -avr --progress dist/* tiye.me:cdn/copycat",
+    "tiye": "rsync -avr --progress dist/{index.html,manifest.json} tiye.me:repo/Memkits/copycat/",
     "upload": "yarn cdn && yarn tiye",
     "release": "shadow-cljs release browser",
     "watch": "shadow-cljs watch browser",
@@ -19,12 +19,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git@github.com:mvc-works/coworkflow.git"
+    "url": "git@github.com:Memkit/copycat.git"
   },
   "author": "jiyinyiyong",
   "license": "MIT",
   "devDependencies": {
-    "http-server": "^0.10.0",
-    "shadow-cljs": "^2.0.92"
+    "http-server": "^0.11.1",
+    "shadow-cljs": "^2.0.150"
   }
 }
