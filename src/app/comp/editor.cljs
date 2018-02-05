@@ -1,7 +1,7 @@
 
 (ns app.comp.editor
   (:require [hsl.core :refer [hsl]]
-            [respo-ui.style :as ui]
+            [respo-ui.core :as ui]
             [respo.macros :refer [defcomp cursor-> <> div button span textarea input]]
             [verbosely.core :refer [verbosely!]]
             [respo.comp.space :refer [=<]]

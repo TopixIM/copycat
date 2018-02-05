@@ -1,7 +1,7 @@
 
 (ns app.comp.container
   (:require [hsl.core :refer [hsl]]
-            [respo-ui.style :as ui]
+            [respo-ui.core :as ui]
             [respo.macros :refer [defcomp cursor-> <> div button span pre]]
             [verbosely.core :refer [verbosely!]]
             [respo.comp.space :refer [=<]]
@@ -17,7 +17,7 @@
  (reel)
  (let [store (:store reel), states (:states store), router (:router store)]
    (div
-    {:style (merge ui/global ui/fullscreen ui/column-center {:align-items :stretch})}
+    {:style (merge ui/global ui/fullscreen ui/column {:align-items :stretch})}
     (comp-header)
     (div {:style {:height 1, :background-color (hsl 0 0 84)}})
     (div

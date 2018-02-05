@@ -1,5 +1,5 @@
 
-(ns app.style (:require [respo-ui.style :as ui] [hsl.core :refer [hsl]]))
+(ns app.style (:require [respo-ui.core :as ui] [hsl.core :refer [hsl]]))
 
 (def button (merge ui/button {:background-color (hsl 200 80 88)}))
 
