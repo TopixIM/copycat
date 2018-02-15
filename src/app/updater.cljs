@@ -10,4 +10,5 @@
     :snippet/update
       (update-in store [:snippets (:id op-data)] (fn [snippet] (merge snippet op-data)))
     :snippet/remove (update store :snippets #(dissoc % op-data))
+    :hydrate-storage op-data
     store))
