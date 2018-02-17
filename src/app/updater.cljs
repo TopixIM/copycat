@@ -1,7 +1,7 @@
 
 (ns app.updater (:require [respo.cursor :refer [mutate]] [app.schema :as schema]))
 
-(defn updater [store op op-data op-id]
+(defn updater [store op op-data op-id op-time]
   (case op
     :states (update store :states (mutate op-data))
     :router/set (assoc store :router op-data)
