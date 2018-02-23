@@ -4060,7 +4060,6 @@
                 :type :expr, :id "H1l8go_FqTHZ", :by nil, :at 1499755354983
                 :data {
                  "T" {:type :leaf, :text "[]", :id "SJ-Lgj_t5aS-", :by "root", :at 1499755354983}
-                 "r" {:type :leaf, :text "|/lib.js", :id "BJ7Ils_Y5arb", :by "root", :at 1517465369975}
                  "v" {:type :leaf, :text "|/main.js", :id "HJNUxo_tcpSb", :by "root", :at 1517465372493}
                 }
                }
