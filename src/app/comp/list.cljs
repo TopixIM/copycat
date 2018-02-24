@@ -8,14 +8,16 @@
             [reel.comp.reel :refer [comp-reel]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.util.list :refer [map-val]]
-            [respo-ui.comp.icon :refer [comp-ios-icon]]
+            [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon]]
             [app.util.dom :refer [copy-text!]]))
 
 (defcomp
  comp-list
  (snippets)
  (if (empty? snippets)
-   (div {:style {:font-family "Josefin Sans", :color (hsl 0 0 70)}} (<> "No snippets"))
+   (div
+    {:style {:font-family "Josefin Sans", :color (hsl 0 0 70), :padding 32, :font-size 32}}
+    (<> "No snippets"))
    (list->
     :div
     {:style (merge
@@ -43,6 +45,11 @@
                :style {:margin 0, :color (hsl 0 0 50), :font-size 12}})
              (=< nil 8)
              (div
-              {:style {:font-size 16},
-               :on-click (fn [e d! m!] (copy-text! (:content snippet)))}
-              (comp-ios-icon "copy-outline")))))))))
+              {:style {:font-size 16}}
+              (span
+               {:on-click (fn [e d! m!] (copy-text! (:content snippet)))}
+               (comp-ios-icon "copy-outline"))
+              (=< 16 nil)
+              (span
+               {:on-click (fn [e d! m!] (d! :snippet/remove (:id snippet)))}
+               (comp-android-icon "delete"))))))))))
