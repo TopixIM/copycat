@@ -8,16 +8,21 @@
             [reel.comp.reel :refer [comp-reel]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.util.list :refer [map-val]]
-            [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon]]
+            [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon comp-icon]]
             [app.util.dom :refer [copy-text!]]))
+
+(defcomp
+ comp-no-snippets
+ ()
+ (div
+  {:style {:font-family "Josefin Sans", :color (hsl 0 0 70), :padding 16, :font-size 20}}
+  (<> "No snippets")))
 
 (defcomp
  comp-list
  (snippets)
  (if (empty? snippets)
-   (div
-    {:style {:font-family "Josefin Sans", :color (hsl 0 0 70), :padding 32, :font-size 32}}
-    (<> "No snippets"))
+   (comp-no-snippets)
    (list->
     :div
     {:style (merge
@@ -38,18 +43,22 @@
                       :margin-right 16,
                       :margin-bottom 16}}
              (div
-              {:on-click (fn [e d! m!] (d! :router/set {:name :read, :data (:id snippet)}))}
-              (<> (:title snippet)))
-             (pre
-              {:inner-text (:content snippet),
-               :style {:margin 0, :color (hsl 0 0 50), :font-size 12}})
-             (=< nil 8)
-             (div
-              {:style {:font-size 16}}
-              (span
-               {:on-click (fn [e d! m!] (copy-text! (:content snippet)))}
-               (comp-ios-icon "copy-outline"))
+              {}
+              (<> (:title snippet))
               (=< 16 nil)
               (span
                {:on-click (fn [e d! m!] (d! :snippet/remove (:id snippet)))}
-               (comp-android-icon "delete"))))))))))
+               (comp-android-icon :delete))
+              (=< 16 nil)
+              (span
+               {:on-click (fn [e d! m!] (d! :router/set {:name :read, :data (:id snippet)}))}
+               (comp-icon :eye)))
+             (=< nil 16)
+             (pre
+              {:inner-text (:content snippet),
+               :style {:margin 0,
+                       :color (hsl 0 0 50),
+                       :padding 8,
+                       :font-size 12,
+                       :background-color (hsl 0 0 100 0.4)},
+               :on-click (fn [e d! m!] (copy-text! (:content snippet)))}))))))))

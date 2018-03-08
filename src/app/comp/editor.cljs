@@ -16,7 +16,7 @@
  (let [state (or (:data states)
                  {:title (or (:title snippet) ""), :content (or (:content snippet) "")})]
    (div
-    {:style (merge ui/flex {:padding 16})}
+    {:style (merge ui/flex {:padding 16, :overflow :auto})}
     (div
      {}
      (div

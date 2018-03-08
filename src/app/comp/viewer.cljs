@@ -18,9 +18,18 @@
    {}
    (<> (:title snippet))
    (=< 16 nil)
-   (span {:on-click (fn [e d! m!] (copy-text! (:content snippet)))} (comp-ios-icon "copy"))
-   (=< 16 nil)
    (span
-    {:on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
-    (comp-icon "edit")))
-  (div {:style ui/row} (pre {:style {:margin "0"}, :inner-text (:content snippet)}))))
+    {:style {:cursor :pointer},
+     :on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
+    (comp-icon :edit)))
+  (=< nil 16)
+  (div
+   {:style ui/row}
+   (pre
+    {:style {:margin "0px",
+             :background-color (hsl 0 0 80),
+             :padding 8,
+             :width "100%",
+             :cursor :pointer},
+     :on-click (fn [e d! m!] (copy-text! (:content snippet))),
+     :inner-text (:content snippet)}))))
