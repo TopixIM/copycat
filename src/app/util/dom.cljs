@@ -2,7 +2,7 @@
 (ns app.util.dom )
 
 (defn copy-text! [content]
-  (let [input (.createElement js/document "input")]
+  (let [input (.createElement js/document "textarea")]
     (.appendChild js/document.body input)
     (set! (.-value input) content)
     (.select input)

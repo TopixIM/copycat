@@ -9,8 +9,7 @@
             [app.comp.header :refer [comp-header]]
             [app.comp.list :refer [comp-list]]
             [app.comp.empty :refer [comp-empty]]
-            [app.comp.editor :refer [comp-editor]]
-            [app.comp.viewer :refer [comp-viewer]]))
+            [app.comp.editor :refer [comp-editor]]))
 
 (defcomp
  comp-container
@@ -20,7 +19,6 @@
     {:style (merge ui/global ui/fullscreen ui/row {:align-items :stretch})}
     (comp-header)
     (case (:name router)
-      :read (comp-viewer (get-in store [:snippets (:data router)]))
       :create (cursor-> :create comp-editor states nil)
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
       :home (comp-list (:snippets store))

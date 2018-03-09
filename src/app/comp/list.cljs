@@ -51,8 +51,8 @@
                (comp-android-icon :delete))
               (=< 16 nil)
               (span
-               {:on-click (fn [e d! m!] (d! :router/set {:name :read, :data (:id snippet)}))}
-               (comp-icon :eye)))
+               {:on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
+               (comp-icon :edit)))
              (=< nil 16)
              (pre
               {:inner-text (:content snippet),
