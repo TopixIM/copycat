@@ -1,5 +1,5 @@
 
-(ns app.render
+(ns app.page
   (:require [respo.render.html :refer [make-string]]
             [shell-page.core :refer [make-page spit slurp]]
             [app.comp.container :refer [comp-container]]
@@ -11,13 +11,14 @@
   {:title "CopyCat",
    :icon "http://cdn.tiye.me/logo/mvc-works.png",
    :ssr nil,
-   :inline-html nil,
-   :inline-styles [(slurp "entry/main.css")]})
+   :inline-html nil})
 
 (defn dev-page []
   (make-page
    ""
-   (merge base-info {:styles ["http://localhost:8100/main.css"], :scripts ["/main.js"]})))
+   (merge
+    base-info
+    {:styles ["http://localhost:8100/main.css" "entry/main.css"], :scripts ["/client.js"]})))
 
 (def preview? (= "preview" js/process.env.prod))
 
@@ -33,7 +34,8 @@
       base-info
       {:styles ["http://cdn.tiye.me/favored-fonts/main.css"],
        :scripts (map #(-> % :output-name prefix-cdn) assets),
-       :ssr "respo-ssr"}))))
+       :ssr "respo-ssr",
+       :inline-styles [(slurp "entry/main.css")]}))))
 
 (defn main! []
   (if (= js/process.env.env "dev")
