@@ -16,9 +16,11 @@
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1",
-    "shadow-cljs": "^2.2.6"
+    "shadow-cljs": "^2.3.21"
   },
   "dependencies": {
+    "alertify.js": "^1.0.12",
+    "copy-to-clip": "^1.0.2",
     "shortid": "^2.2.8"
   }
 }
