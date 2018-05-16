@@ -21,5 +21,7 @@
                              :build-options {:manifest-name "assets.edn"}}}
           :page {:target :node-script
                  :output-to "target/page.js"
+                 :js-options {:resolve {"alertify.js" {:target :file
+                                                       :file "entry/alert-ssr.js"}}}
                  :main app.page/main!
                  :devtools {:after-load app.page/main!}}}}
