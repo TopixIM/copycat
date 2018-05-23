@@ -9,7 +9,8 @@
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.util.list :refer [map-val]]
             [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon comp-icon]]
-            [app.util.dom :refer [copy-text!]]))
+            ["copy-to-clipboard" :as copy]
+            ["alertify.js" :as alertify]))
 
 (defcomp
  comp-no-snippets
@@ -61,4 +62,4 @@
                        :padding 8,
                        :font-size 12,
                        :background-color (hsl 0 0 100 0.4)},
-               :on-click (fn [e d! m!] (copy-text! (:content snippet)))}))))))))
+               :on-click (fn [e d! m!] (copy (:content snippet)) (.log alertify "copied"))}))))))))

@@ -4,9 +4,13 @@
   "description": "Stack Workflow",
   "main": "index.js",
   "scripts": {
-    "watch": "shadow-cljs watch browser",
+    "watch": "shadow-cljs watch client",
     "serve": "http-server dist -s",
-    "repl": "rlwrap shadow-cljs clj-repl"
+    "repl": "rlwrap shadow-cljs clj-repl",
+    "build": "shadow-cljs clj-run build.main/build",
+    "build-local": "shadow-cljs clj-run build.main/build-local",
+    "page": "shadow-cljs clj-run build.main/page",
+    "upload": "lumo -c cli -m build.upload"
   },
   "repository": {
     "type": "git",
@@ -16,11 +20,11 @@
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1",
-    "shadow-cljs": "^2.3.21"
+    "shadow-cljs": "^2.3.22"
   },
   "dependencies": {
     "alertify.js": "^1.0.12",
-    "copy-to-clip": "^1.0.2",
+    "copy-to-clipboard": "^3.0.8",
     "shortid": "^2.2.8"
   }
 }
