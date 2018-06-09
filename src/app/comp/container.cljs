@@ -9,7 +9,9 @@
             [app.comp.header :refer [comp-header]]
             [app.comp.list :refer [comp-list]]
             [app.comp.empty :refer [comp-empty]]
-            [app.comp.editor :refer [comp-editor]]))
+            [app.comp.editor :refer [comp-editor]]
+            [respo-message.comp.messages :refer [comp-messages]]
+            [app.config :as config]))
 
 (defcomp
  comp-container
@@ -23,4 +25,5 @@
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
       :home (comp-list (:snippets store))
       (comp-empty router))
-    (cursor-> :reel comp-reel states reel {}))))
+    (comp-messages (:messages store) {:bottom? false})
+    (when config/dev? (cursor-> :reel comp-reel states reel {})))))

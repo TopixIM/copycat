@@ -5,7 +5,9 @@
             [app.comp.container :refer [comp-container]]
             [app.schema :as schema]
             [reel.schema :as reel-schema]
-            [cljs.reader :refer [read-string]]))
+            [cljs.reader :refer [read-string]]
+            [app.config :as config]
+            [app.util :refer [get-env!]]))
 
 (def base-info
   {:title "CopyCat",
@@ -20,13 +22,13 @@
     base-info
     {:styles ["http://localhost:8100/main.css" "entry/main.css"], :scripts ["/client.js"]})))
 
-(def preview? (= "preview" js/process.env.prod))
+(def local-bundle? (= "local-bundle" (get-env! "mode")))
 
 (defn prod-page []
   (let [reel (-> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store))
         html-content (make-string (comp-container reel))
         assets (read-string (slurp "dist/assets.edn"))
-        cdn (if preview? "" "http://cdn.tiye.me/copycat/")
+        cdn (if local-bundle? "" "http://cdn.tiye.me/copycat/")
         prefix-cdn (fn [x] (str cdn x))]
     (make-page
      html-content
@@ -38,6 +40,6 @@
        :inline-styles [(slurp "entry/main.css")]}))))
 
 (defn main! []
-  (if (= js/process.env.env "dev")
-    (spit "target/index.html" (dev-page))
-    (spit "dist/index.html" (prod-page))))
+  (if (contains? config/bundle-builds (get-env! "mode"))
+    (spit "dist/index.html" (prod-page))
+    (spit "target/index.html" (dev-page))))
