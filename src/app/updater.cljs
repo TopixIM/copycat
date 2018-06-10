@@ -15,6 +15,7 @@
       (update-in store [:snippets (:id op-data)] (fn [snippet] (merge snippet op-data)))
     :snippet/remove (update store :snippets #(dissoc % op-data))
     :hydrate-storage op-data
+    :query (assoc store :query op-data)
     (if (message-action/message-action? op)
       (update store :messages #(update-messages % op op-data op-id op-time))
       store)))
