@@ -10,7 +10,8 @@
             [respo.util.list :refer [map-val]]
             [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon comp-icon]]
             ["copy-to-clipboard" :as copy]
-            ["alertify.js" :as alertify]))
+            [respo-message.action :as message-action]
+            [clojure.string :as string]))
 
 (defcomp
  comp-no-snippets
@@ -21,7 +22,7 @@
 
 (defcomp
  comp-list
- (snippets)
+ (snippets query)
  (if (empty? snippets)
    (comp-no-snippets)
    (list->
@@ -30,16 +31,15 @@
              ui/row
              {:padding "16px", :align-items :flex-start, :flex-wrap :wrap, :overflow :auto})}
     (->> snippets
+         (filter (fn [[k snippet]] (string/includes? (:title snippet) (or query ""))))
          (map-val
           (fn [snippet]
             (div
              {:style {:white-space :nowrap,
-                      :padding "16px 16px",
                       :text-overflow :ellipsis,
                       :overflow :hidden,
                       :line-height "24px",
                       :width 400,
-                      :background-color (hsl 0 0 90),
                       :cursor :pointer,
                       :margin-right 16,
                       :margin-bottom 16}}
@@ -54,12 +54,17 @@
               (span
                {:on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
                (comp-icon :edit)))
-             (=< nil 16)
              (pre
               {:inner-text (:content snippet),
                :style {:margin 0,
                        :color (hsl 0 0 50),
                        :padding 8,
                        :font-size 12,
-                       :background-color (hsl 0 0 100 0.4)},
-               :on-click (fn [e d! m!] (copy (:content snippet)) (.log alertify "copied"))}))))))))
+                       :border (str "1px solid " (hsl 0 0 90)),
+                       :height 320,
+                       :overflow :auto,
+                       :line-height "18px",
+                       :font-family ui/font-code},
+               :on-click (fn [e d! m!]
+                 (copy (:content snippet))
+                 (d! message-action/create {:text "Copied!"}))}))))))))

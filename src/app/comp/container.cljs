@@ -16,11 +16,11 @@
  (reel)
  (let [store (:store reel), states (:states store), router (:router store)]
    (div
-    {:style (merge ui/global ui/fullscreen ui/row {:align-items :stretch})}
-    (comp-header)
+    {:style (merge ui/global ui/fullscreen ui/column {:align-items :stretch})}
+    (comp-header (:query store))
     (case (:name router)
       :create (cursor-> :create comp-editor states nil)
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
-      :home (comp-list (:snippets store))
+      :home (comp-list (:snippets store) (:query store))
       (comp-empty router))
     (cursor-> :reel comp-reel states reel {}))))
