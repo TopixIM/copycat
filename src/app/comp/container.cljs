@@ -25,5 +25,5 @@
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
       :home (comp-list (:snippets store) (:query store))
       (comp-empty router))
-    (when config/dev? (comp-messages (:messages store) {}))
+    (comp-messages (:messages store) {})
     (cursor-> :reel comp-reel states reel {}))))
