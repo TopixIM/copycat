@@ -11,7 +11,8 @@
             [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon comp-icon]]
             ["copy-to-clipboard" :as copy]
             [respo-message.action :as message-action]
-            [clojure.string :as string]))
+            [clojure.string :as string]
+            ["shortid" :as shortid]))
 
 (defcomp
  comp-no-snippets
@@ -67,4 +68,8 @@
                        :font-family ui/font-code},
                :on-click (fn [e d! m!]
                  (copy (:content snippet))
-                 (d! message-action/create {:text "Copied!"}))}))))))))
+                 (let [new-token (.generate shortid)]
+                   (d! message-action/create {:text "Copied!", :token new-token})
+                   (js/setTimeout
+                    (fn [] (d! message-action/remove-one {:token new-token}))
+                    2000)))}))))))))
