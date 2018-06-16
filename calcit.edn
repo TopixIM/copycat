@@ -2472,17 +2472,29 @@
                   :data {
                    "T" {:type :leaf, :by "root", :at 1528653972129, :text "string/includes?", :id "BJgQqukogmleaf"}
                    "j" {
-                    :type :expr, :by "root", :at 1528653973386, :id "SJpcukjg7"
+                    :type :expr, :by "root", :at 1529165229743, :id "Sk82H2fZQ"
                     :data {
-                     "T" {:type :leaf, :by "root", :at 1528653975020, :text ":title", :id "SJzncu1sxm"}
-                     "j" {:type :leaf, :by "root", :at 1528653976409, :text "snippet", :id "SkVko_yjlQ"}
+                     "D" {:type :leaf, :by "root", :at 1529165234876, :text "string/lower-case", :id "H1lIhH2GWX"}
+                     "T" {
+                      :type :expr, :by "root", :at 1528653973386, :id "SJpcukjg7"
+                      :data {
+                       "T" {:type :leaf, :by "root", :at 1528653975020, :text ":title", :id "SJzncu1sxm"}
+                       "j" {:type :leaf, :by "root", :at 1528653976409, :text "snippet", :id "SkVko_yjlQ"}
+                      }
+                     }
                     }
                    }
                    "r" {
                     :type :expr, :by "root", :at 1528654070916, :id "SJkbt1sl7"
                     :data {
                      "D" {:type :leaf, :by "root", :at 1528654071711, :text "or", :id "rk-1bYJsxX"}
-                     "T" {:type :leaf, :by "root", :at 1528653979845, :text "query", :id "BkWGi_yix7"}
+                     "T" {
+                      :type :expr, :by "root", :at 1529165292027, :id "ByxNeL2z-7"
+                      :data {
+                       "D" {:type :leaf, :by "root", :at 1529165295878, :text "string/lower-case", :id "B1-4lUhG-X"}
+                       "T" {:type :leaf, :by "root", :at 1528653979845, :text "query", :id "BkWGi_yix7"}
+                      }
+                     }
                      "j" {:type :leaf, :by "root", :at 1528654077003, :text "\"", :id "SklWZK1sx7"}
                     }
                    }

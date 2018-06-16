@@ -32,7 +32,11 @@
              ui/row
              {:padding "16px", :align-items :flex-start, :flex-wrap :wrap, :overflow :auto})}
     (->> snippets
-         (filter (fn [[k snippet]] (string/includes? (:title snippet) (or query ""))))
+         (filter
+          (fn [[k snippet]]
+            (string/includes?
+             (string/lower-case (:title snippet))
+             (or (string/lower-case query) ""))))
          (map-val
           (fn [snippet]
             (div
