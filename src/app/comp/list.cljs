@@ -32,7 +32,11 @@
              ui/row
              {:padding "16px", :align-items :flex-start, :flex-wrap :wrap, :overflow :auto})}
     (->> snippets
-         (filter (fn [[k snippet]] (string/includes? (:title snippet) (or query ""))))
+         (filter
+          (fn [[k snippet]]
+            (string/includes?
+             (string/lower-case (:title snippet))
+             (or (string/lower-case query) ""))))
          (map-val
           (fn [snippet]
             (div
@@ -43,23 +47,34 @@
                       :width 400,
                       :cursor :pointer,
                       :margin-right 16,
-                      :margin-bottom 16}}
+                      :margin-bottom 16,
+                      :position :relative}}
              (div
-              {}
+              {:style (merge
+                       ui/row-parted
+                       {:width "100%",
+                        :position :absolute,
+                        :bottom 0,
+                        :padding 8,
+                        :background-color (hsl 0 0 100 0.8),
+                        :border (str "1px solid " (hsl 0 0 90))})}
               (<> (:title snippet))
-              (=< 16 nil)
               (span
-               {:on-click (fn [e d! m!] (d! :snippet/remove (:id snippet)))}
-               (comp-android-icon :delete))
-              (=< 16 nil)
-              (span
-               {:on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
-               (comp-icon :edit)))
+               {}
+               (span
+                {:on-click (fn [e d! m!] (d! :snippet/remove (:id snippet)))}
+                (comp-android-icon :delete))
+               (=< 16 nil)
+               (span
+                {:on-click (fn [e d! m!]
+                   (d! :router/set {:name :edit, :data (:id snippet)}))}
+                (comp-icon :edit))))
              (pre
               {:inner-text (:content snippet),
                :style {:margin 0,
                        :color (hsl 0 0 50),
                        :padding 8,
+                       :padding-bottom 40,
                        :font-size 12,
                        :border (str "1px solid " (hsl 0 0 90)),
                        :height 320,

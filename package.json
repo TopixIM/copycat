@@ -1,5 +1,5 @@
 {
-  "name": "coworkflow",
+  "name": "copycat",
   "version": "0.1.0",
   "description": "Stack Workflow",
   "main": "index.js",
@@ -21,7 +21,7 @@
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1",
-    "shadow-cljs": "^2.4.4"
+    "shadow-cljs": "^2.4.5"
   },
   "dependencies": {
     "copy-to-clipboard": "^3.0.8",
