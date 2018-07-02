@@ -7,12 +7,15 @@
             [reel.util :refer [listen-devtools!]]
             [reel.core :refer [reel-updater refresh-reel]]
             [reel.schema :as reel-schema]
-            [cljs.reader :refer [read-string]]))
+            [cljs.reader :refer [read-string]]
+            [app.config :refer [dev?]]))
 
 (defonce *reel
   (atom (-> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store))))
 
-(defn dispatch! [op op-data] (reset! *reel (reel-updater updater @*reel op op-data)))
+(defn dispatch! [op op-data]
+  (when dev? (println op op-data))
+  (reset! *reel (reel-updater updater @*reel op op-data)))
 
 (def mount-target (.querySelector js/document ".app"))
 

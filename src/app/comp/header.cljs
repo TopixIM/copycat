@@ -29,4 +29,8 @@
     :on-click (fn [e d! m!] (d! :router/set {:name :create, :data nil}))}
    (comp-icon "plus"))
   (=< 24 nil)
-  (input {:style ui/input, :value query, :on-input (fn [e d! m!] (d! :query (:value e)))})))
+  (input
+   {:style ui/input,
+    :value query,
+    :placeholder "Filter...",
+    :on-input (fn [e d! m!] (d! :query (:value e)))})))
