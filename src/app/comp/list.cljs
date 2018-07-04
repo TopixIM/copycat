@@ -12,7 +12,8 @@
             ["copy-to-clipboard" :as copy]
             [respo-message.action :as message-action]
             [clojure.string :as string]
-            ["shortid" :as shortid]))
+            ["shortid" :as shortid]
+            [respo-alerts.comp.alerts :refer [comp-confirm]]))
 
 (def style-card
   {:white-space :nowrap,
@@ -40,7 +41,7 @@
 
 (defcomp
  comp-card
- (snippet)
+ (states snippet)
  (div
   {:style style-card}
   (div
@@ -56,16 +57,21 @@
     {:style ui/row}
     (<> (:title snippet))
     (=< 8 nil)
-    (<> (str "(" (:copied-times snippet) ")") {:font-size 12, :color (hsl 0 0 80)}))
-   (span
-    {}
+    (let [x (:copied-times snippet)]
+      (when (and (number? x) (> x 0))
+        (<> (str "(" x ")") {:font-size 12, :color (hsl 0 0 80)})))
+    (=< 8 nil)
     (span
-     {:on-click (fn [e d! m!] (d! :snippet/remove (:id snippet)))}
-     (comp-android-icon :delete))
-    (=< 16 nil)
-    (span
-     {:on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
-     (comp-icon :edit))))
+     {:style ui/center,
+      :on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
+     (comp-icon :edit)))
+   (cursor->
+    :remove
+    comp-confirm
+    states
+    (span {:style {:color :red}} (comp-android-icon :delete))
+    "Sure to remove?"
+    (fn [result d! m!] (if result (d! :snippet/remove (:id snippet))))))
   (pre
    {:inner-text (:content snippet),
     :style style-code-area,
@@ -85,7 +91,7 @@
 
 (defcomp
  comp-list
- (snippets query)
+ (states snippets query)
  (if (empty? snippets)
    (comp-no-snippets)
    (list->
@@ -100,4 +106,4 @@
              (string/lower-case (:title snippet))
              (or (string/lower-case query) ""))))
          (sort-by (fn [[k snippet]] (unchecked-negate (:copied-times snippet))))
-         (map-val (fn [snippet] (comp-card snippet)))))))
+         (map-val (fn [snippet] (cursor-> (:id snippet) comp-card states snippet)))))))
