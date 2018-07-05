@@ -29,7 +29,7 @@
     (case (:name router)
       :create (cursor-> :create comp-editor states nil)
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
-      :home (comp-list (:snippets store) (:query store))
+      :home (comp-list states (:snippets store) (:query store))
       (comp-empty router))
     (comp-messages (:messages store) {} (fn [info d! m!] (d! action/remove-one info)))
     (when config/dev? (comp-inspect "Store" store {:bottom 0}))
