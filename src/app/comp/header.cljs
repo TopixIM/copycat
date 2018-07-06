@@ -30,7 +30,7 @@
    (comp-icon "plus"))
   (=< 24 nil)
   (input
-   {:style ui/input,
+   {:style (merge ui/input {:width 320}),
     :value query,
     :placeholder "Filter...",
     :on-input (fn [e d! m!] (d! :query (:value e)))})))
