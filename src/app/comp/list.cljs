@@ -69,9 +69,9 @@
     :remove
     comp-confirm
     states
-    (span {:style {:color :red}} (comp-android-icon :delete))
-    "Sure to remove?"
-    (fn [result d! m!] (if result (d! :snippet/remove (:id snippet))))))
+    {:trigger (span {:style {:color :red}} (comp-android-icon :delete)),
+     :text "Sure to remove?"}
+    (fn [e d! m!] (d! :snippet/remove (:id snippet)))))
   (pre
    {:inner-text (:content snippet),
     :style style-code-area,
@@ -98,7 +98,11 @@
     :div
     {:style (merge
              ui/row
-             {:padding "16px", :align-items :flex-start, :flex-wrap :wrap, :overflow :auto})}
+             {:padding 16,
+              :padding-bottom 120,
+              :align-items :flex-start,
+              :flex-wrap :wrap,
+              :overflow :auto})}
     (->> snippets
          (filter
           (fn [[k snippet]]
