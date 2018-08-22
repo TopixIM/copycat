@@ -21,10 +21,10 @@
   "license": "MIT",
   "devDependencies": {
     "http-server": "^0.11.1",
-    "shadow-cljs": "^2.4.16"
+    "shadow-cljs": "^2.6.2"
   },
   "dependencies": {
     "copy-to-clipboard": "^3.0.8",
-    "shortid": "^2.2.8"
+    "shortid": "^2.2.13"
   }
 }
