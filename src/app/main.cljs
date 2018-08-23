@@ -31,7 +31,15 @@
   (.addEventListener
    js/window
    "beforeunload"
-   (fn [] (.setItem js/localStorage (:storage schema/config) (pr-str (:store @*reel)))))
+   (fn []
+     (.setItem
+      js/localStorage
+      (:storage schema/config)
+      (-> (:store @*reel)
+          (assoc :query "")
+          (assoc :states {})
+          (assoc :messages {})
+          (pr-str)))))
   (let [raw (.getItem js/localStorage (:storage schema/config))]
     (if (some? raw) (dispatch! :hydrate-storage (read-string raw))))
   (println "App started."))
