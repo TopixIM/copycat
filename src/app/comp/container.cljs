@@ -11,8 +11,6 @@
             [app.comp.empty :refer [comp-empty]]
             [app.comp.editor :refer [comp-editor]]
             [app.config :as config]
-            [respo-message.comp.messages :refer [comp-messages]]
-            [respo-message.action :as action]
             [respo.comp.inspect :refer [comp-inspect]]))
 
 (defcomp
@@ -31,6 +29,5 @@
       :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
       :home (comp-list states (:snippets store) (:query store))
       (comp-empty router))
-    (comp-messages (:messages store) {} (fn [info d! m!] (d! action/remove-one info)))
     (when config/dev? (comp-inspect "Store" store {:bottom 0}))
     (cursor-> :reel comp-reel states reel {}))))
