@@ -1,9 +1,5 @@
 
-(ns app.updater
-  (:require [respo.cursor :refer [mutate]]
-            [app.schema :as schema]
-            [respo-message.action :as message-action]
-            [respo-message.updater :refer [update-messages]]))
+(ns app.updater (:require [respo.cursor :refer [mutate]] [app.schema :as schema]))
 
 (defn updater [store op op-data op-id op-time]
   (case op
@@ -24,6 +20,4 @@
     :snippet/remove (update store :snippets #(dissoc % op-data))
     :hydrate-storage op-data
     :query (assoc store :query op-data)
-    (if (message-action/message-action? op)
-      (update store :messages #(update-messages % op op-data op-id op-time))
-      store)))
+    store))
