@@ -1,8 +1,19 @@
 
 (ns app.schema )
 
-(def config {:storage "copycat"})
+(def database {:sessions {}, :users {}})
 
-(def snippet {:id nil, :title "", :content "", :edited-at nil, :copied-times 0})
+(def notification {:id nil, :kind nil, :text nil})
 
-(def store {:states {}, :query "", :snippets {}, :messages {}, :router {:name :home}})
+(def page {:id nil, :title "", :time nil})
+
+(def router {:name nil, :title nil, :data {}, :router nil})
+
+(def session
+  {:user-id nil,
+   :id nil,
+   :nickname nil,
+   :router {:name :home, :data nil, :router nil},
+   :messages {}})
+
+(def user {:name nil, :id nil, :nickname nil, :avatar nil, :password nil})

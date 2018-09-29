@@ -2,32 +2,78 @@
 (ns app.comp.container
   (:require [hsl.core :refer [hsl]]
             [respo-ui.core :as ui]
-            [respo.macros :refer [defcomp cursor-> <> div button span pre]]
-            [verbosely.core :refer [verbosely!]]
+            [respo.macros :refer [defcomp <> div span action-> cursor-> button]]
+            [respo.comp.inspect :refer [comp-inspect]]
             [respo.comp.space :refer [=<]]
-            [reel.comp.reel :refer [comp-reel]]
-            [app.comp.header :refer [comp-header]]
-            [app.comp.list :refer [comp-list]]
-            [app.comp.empty :refer [comp-empty]]
-            [app.comp.editor :refer [comp-editor]]
-            [app.config :as config]
-            [respo.comp.inspect :refer [comp-inspect]]))
+            [app.comp.navigation :refer [comp-navigation]]
+            [app.comp.profile :refer [comp-profile]]
+            [app.comp.login :refer [comp-login]]
+            [respo-message.comp.messages :refer [comp-messages]]
+            [app.comp.reel :refer [comp-reel]]
+            [app.config :refer [dev?]]
+            [app.comp.pages :refer [comp-pages]]
+            [app.schema :as schema]
+            [app.config :as config]))
+
+(defcomp
+ comp-offline
+ ()
+ (div
+  {:style (merge
+           ui/global
+           ui/fullscreen
+           ui/column-dispersive
+           {:background-color (:theme config/site)})}
+  (div {:style {:height 0}})
+  (div
+   {:style {:background-image (str "url(" (:icon config/site) ")"),
+            :width 128,
+            :height 128,
+            :background-size :contain}})
+  (div
+   {:style {:cursor :pointer, :line-height "32px"},
+    :on-click (action-> :effect/connect nil)}
+   (<> "No connection..." {:font-family ui/font-fancy, :font-size 24}))))
+
+(defcomp
+ comp-status-color
+ (color)
+ (div
+  {:style (let [size 24]
+     {:width size,
+      :height size,
+      :position :absolute,
+      :bottom 60,
+      :left 8,
+      :background-color color,
+      :border-radius "50%",
+      :opacity 0.6,
+      :pointer-events :none})}))
 
 (defcomp
  comp-container
- (reel)
- (let [store (:store reel), states (:states store), router (:router store)]
-   (div
-    {:style (merge
-             ui/global
-             ui/fullscreen
-             ui/column
-             {:align-items :stretch, :background-color (hsl 0 0 96)})}
-    (comp-header (:query store))
-    (case (:name router)
-      :create (cursor-> :create comp-editor states nil)
-      :edit (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
-      :home (comp-list states (:snippets store) (:query store))
-      (comp-empty router))
-    (when config/dev? (comp-inspect "Store" store {:bottom 0}))
-    (cursor-> :reel comp-reel states reel {}))))
+ (states store)
+ (let [state (:data states)
+       session (:session store)
+       router (:router store)
+       router-data (:data router)]
+   (if (nil? store)
+     (comp-offline)
+     (div
+      {:style (merge ui/global ui/fullscreen ui/column)}
+      (comp-navigation (:logged-in? store) (:count store))
+      (if (:logged-in? store)
+        (case (:name router)
+          :home (cursor-> :pages comp-pages states router-data)
+          :profile (comp-profile (:user store) (:data router))
+          (<> router))
+        (comp-login states))
+      (comp-status-color (:color store))
+      (when dev? (comp-inspect "Store" store {:bottom 0, :left 0, :max-width "100%"}))
+      (comp-messages
+       (get-in store [:session :messages])
+       {}
+       (fn [info d! m!] (d! :session/remove-message info)))
+      (when dev? (comp-reel (:reel-length store) {}))))))
+
+(def style-body {:padding "8px 16px"})

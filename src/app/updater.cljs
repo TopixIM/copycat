@@ -1,23 +1,23 @@
 
-(ns app.updater (:require [respo.cursor :refer [mutate]] [app.schema :as schema]))
+(ns app.updater
+  (:require [app.updater.session :as session]
+            [app.updater.user :as user]
+            [app.updater.router :as router]
+            [app.updater.page :as page]
+            [app.schema :as schema]
+            [respo-message.updater :refer [update-messages]]))
 
-(defn updater [store op op-data op-id op-time]
-  (case op
-    :states (update store :states (mutate op-data))
-    :router/set (assoc store :router op-data)
-    :snippet/create
-      (assoc-in
-       store
-       [:snippets op-id]
-       (merge schema/snippet op-data {:id op-id, :edited-at op-time}))
-    :snippet/update
-      (update-in
-       store
-       [:snippets (:id op-data)]
-       (fn [snippet] (-> snippet (merge op-data) (assoc :edited-at op-time))))
-    :snippet/count-usage
-      (update-in store [:snippets op-data] (fn [snippet] (update snippet :copied-times inc)))
-    :snippet/remove (update store :snippets #(dissoc % op-data))
-    :hydrate-storage op-data
-    :query (assoc store :query op-data)
-    store))
+(defn updater [db op op-data sid op-id op-time]
+  (let [f (case op
+            :session/connect session/connect
+            :session/disconnect session/disconnect
+            :session/remove-message session/remove-message
+            :user/log-in user/log-in
+            :user/sign-up user/sign-up
+            :user/log-out user/log-out
+            :router/change router/change
+            :page/create page/create
+            :page/update-title page/update-title
+            :page/remove-one page/remove-one
+            (do (println "Unknown op:" op) identity))]
+    (f db op-data sid op-id op-time)))
