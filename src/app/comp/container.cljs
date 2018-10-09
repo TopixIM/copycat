@@ -11,9 +11,12 @@
             [respo-message.comp.messages :refer [comp-messages]]
             [app.comp.reel :refer [comp-reel]]
             [app.config :refer [dev?]]
-            [app.comp.pages :refer [comp-pages]]
             [app.schema :as schema]
-            [app.config :as config]))
+            [app.config :as config]
+            [app.comp.editor :refer [comp-editor]]
+            [app.comp.empty :refer [comp-empty]]
+            [app.comp.list :refer [comp-list]]
+            [app.comp.header :refer [comp-header]]))
 
 (defcomp
  comp-offline
@@ -64,7 +67,10 @@
       (comp-navigation (:logged-in? store) (:count store))
       (if (:logged-in? store)
         (case (:name router)
-          :home (cursor-> :pages comp-pages states router-data)
+          :home (comp-list states (:snippets store) (:query store))
+          :create (cursor-> :create comp-editor states nil)
+          :edit
+            (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))
           :profile (comp-profile (:user store) (:data router))
           (<> router))
         (comp-login states))

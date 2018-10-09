@@ -1,11 +1,11 @@
 
 (ns app.schema )
 
-(def database {:sessions {}, :users {}})
+(def snippet {:id nil, :title "", :content "", :edited-at nil, :copied-times 0})
+
+(def database {:sessions {}, :users {}, :snippets (do snippet {})})
 
 (def notification {:id nil, :kind nil, :text nil})
-
-(def page {:id nil, :title "", :time nil})
 
 (def router {:name nil, :title nil, :data {}, :router nil})
 
