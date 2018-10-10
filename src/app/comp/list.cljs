@@ -117,7 +117,7 @@
          (filter
           (fn [[k snippet]]
             (string/includes?
-             (string/lower-case (:title snippet))
+             (string/lower-case (or (:title snippet) ""))
              (or (string/lower-case (or query "")) ""))))
          (sort-by (fn [[k snippet]] (unchecked-negate (:copied-times snippet))))
          (map-val (fn [snippet] (cursor-> (:id snippet) comp-card states snippet)))))))

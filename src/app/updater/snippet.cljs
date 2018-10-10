@@ -2,10 +2,7 @@
 (ns app.updater.snippet (:require [app.schema :as schema]))
 
 (defn count-usage [db op-data sid op-id op-time]
-  (update-in
-   db
-   [:snippets (:id op-data)]
-   (fn [snippet] (-> snippet (merge op-data) (assoc :edited-at op-time)))))
+  (update-in db [:snippets op-data] (fn [snippet] (update snippet :copied-times inc))))
 
 (defn create-one [db op-data sid op-id op-time]
   (assoc-in
