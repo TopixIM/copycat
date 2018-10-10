@@ -15,8 +15,7 @@
             [app.config :as config]
             [app.comp.editor :refer [comp-editor]]
             [app.comp.empty :refer [comp-empty]]
-            [app.comp.list :refer [comp-list]]
-            [app.comp.header :refer [comp-header]]))
+            [app.comp.list :refer [comp-list]]))
 
 (defcomp
  comp-offline
@@ -56,7 +55,7 @@
 (defcomp
  comp-container
  (states store)
- (let [state (:data states)
+ (let [state (or (:data states) {:query ""})
        session (:session store)
        router (:router store)
        router-data (:data router)]
@@ -64,10 +63,10 @@
      (comp-offline)
      (div
       {:style (merge ui/global ui/fullscreen ui/column)}
-      (comp-navigation (:logged-in? store) (:count store))
+      (comp-navigation (:logged-in? store) (:count store) (:query state) %cursor)
       (if (:logged-in? store)
         (case (:name router)
-          :home (comp-list states (:snippets store) (:query store))
+          :home (comp-list states (:snippets store) (:query state))
           :create (cursor-> :create comp-editor states nil)
           :edit
             (cursor-> :edit comp-editor states (get-in store [:snippets (:data router)]))

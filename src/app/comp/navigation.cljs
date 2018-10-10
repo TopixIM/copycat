@@ -9,7 +9,7 @@
 
 (defcomp
  comp-navigation
- (logged-in? count-members)
+ (logged-in? count-members query parent-cursor)
  (div
   {:style (merge
            ui/row-center
@@ -21,18 +21,19 @@
             :font-family ui/font-fancy})}
   (div
    {:on-click (action-> :router/change {:name :home}),
-    :style (merge ui/row {:cursor :pointer})}
+    :style (merge ui/row-center {:cursor :pointer})}
    (<> (:title config/site) nil)
+   (=< 24 nil)
    (div
     {:style {:cursor :pointer},
      :on-click (fn [e d! m!] (d! :router/change {:name :create, :data nil}))}
     (comp-icon "plus"))
-   (=< 8 nil)
+   (=< 24 nil)
    (input
     {:style (merge ui/input {:width 320}),
-     :value "query",
+     :value query,
      :placeholder "Filter...",
-     :on-input (fn [e d! m!] (d! :query (:value e)))}))
+     :on-input (fn [e d! m!] (m! parent-cursor {:query (:value e)}))}))
   (div
    {:style {:cursor "pointer"}, :on-click (action-> :router/change {:name :profile})}
    (<> (if logged-in? "Me" "Guest"))
