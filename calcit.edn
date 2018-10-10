@@ -6684,7 +6684,7 @@
           :type :expr, :by "root", :at 1527867511986, :id "r1gxKOykeQ"
           :data {
            "T" {:type :leaf, :by "root", :at 1527867512819, :text ":icon", :id "r1gxKOykeQleaf"}
-           "j" {:type :leaf, :by "root", :at 1527867517723, :text "\"http://cdn.tiye.me/logo/cumulo.png", :id "B1SY_yJx7"}
+           "j" {:type :leaf, :by "root", :at 1539197344046, :text "\"http://cdn.tiye.me/logo/copycat.png", :id "B1SY_yJx7"}
           }
          }
          "v" {
