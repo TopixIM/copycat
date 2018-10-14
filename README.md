@@ -4,11 +4,11 @@ CopyCat
 
 Tool for copying frequently used snippets.
 
-Demo http://repo.memkits.org/copycat/
+Demo http://copycat.topix.im/
 
 ### Workflow
 
-Workflow https://github.com/mvc-works/calcit-workflow
+Workflow https://github.com/Cumulo/cumulo-workflow
 
 ### License
 

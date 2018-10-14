@@ -5,7 +5,6 @@
             [respo.macros :refer [defcomp cursor-> list-> <> div button span pre]]
             [verbosely.core :refer [verbosely!]]
             [respo.comp.space :refer [=<]]
-            [reel.comp.reel :refer [comp-reel]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.util.list :refer [map-val]]
             [respo-ui.comp.icon :refer [comp-ios-icon comp-android-icon comp-icon]]
@@ -65,7 +64,7 @@
       (=< 8 nil)
       (span
        {:style ui/center,
-        :on-click (fn [e d! m!] (d! :router/set {:name :edit, :data (:id snippet)}))}
+        :on-click (fn [e d! m!] (d! :router/change {:name :edit, :data (:id snippet)}))}
        (comp-icon :edit)))
      (cursor->
       :remove
@@ -118,7 +117,7 @@
          (filter
           (fn [[k snippet]]
             (string/includes?
-             (string/lower-case (:title snippet))
-             (or (string/lower-case query) ""))))
+             (string/lower-case (or (:title snippet) ""))
+             (or (string/lower-case (or query "")) ""))))
          (sort-by (fn [[k snippet]] (unchecked-negate (:copied-times snippet))))
          (map-val (fn [snippet] (cursor-> (:id snippet) comp-card states snippet)))))))

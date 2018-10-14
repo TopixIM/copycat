@@ -3,41 +3,39 @@
   (:require [respo.render.html :refer [make-string]]
             [shell-page.core :refer [make-page spit slurp]]
             [app.comp.container :refer [comp-container]]
-            [app.schema :as schema]
-            [reel.schema :as reel-schema]
             [cljs.reader :refer [read-string]]
+            [app.schema :as schema]
             [app.config :as config]
             [app.util :refer [get-env!]]))
 
 (def base-info
-  {:title "CopyCat",
-   :icon "http://cdn.tiye.me/logo/mvc-works.png",
+  {:title (:title config/site),
+   :icon (:icon config/site),
    :ssr nil,
-   :inline-html nil})
+   :inline-styles [(slurp "entry/main.css")]})
 
 (defn dev-page []
   (make-page
    ""
    (merge
     base-info
-    {:styles ["http://localhost:8100/main.css" "entry/main.css"], :scripts ["/client.js"]})))
+    {:styles [(:dev-ui config/site) "/entry/main.css"],
+     :scripts ["/client.js"],
+     :inline-styles []})))
 
 (def local-bundle? (= "local-bundle" (get-env! "mode")))
 
 (defn prod-page []
-  (let [reel (-> reel-schema/reel (assoc :base schema/store) (assoc :store schema/store))
-        html-content (make-string (comp-container reel))
+  (let [html-content (make-string (comp-container {} nil))
         assets (read-string (slurp "dist/assets.edn"))
-        cdn (if local-bundle? "" "http://cdn.tiye.me/copycat/")
-        prefix-cdn (fn [x] (str cdn x))]
+        cdn (if local-bundle? "" (:cdn-url config/site))
+        prefix-cdn #(str cdn %)]
     (make-page
      html-content
      (merge
       base-info
-      {:styles ["http://cdn.tiye.me/favored-fonts/main.css"],
-       :scripts (map #(-> % :output-name prefix-cdn) assets),
-       :ssr "respo-ssr",
-       :inline-styles [(slurp "entry/main.css")]}))))
+      {:styles [(:release-ui config/site)],
+       :scripts (map #(-> % :output-name prefix-cdn) assets)}))))
 
 (defn main! []
   (if (contains? config/bundle-builds (get-env! "mode"))

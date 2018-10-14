@@ -7,7 +7,6 @@
              [defcomp cursor-> <> div button span textarea button input]]
             [verbosely.core :refer [verbosely!]]
             [respo.comp.space :refer [=<]]
-            [reel.comp.reel :refer [comp-reel]]
             [app.style :as style]))
 
 (defcomp
@@ -49,5 +48,5 @@
            (d! :snippet/update (merge snippet state))
            (d! :snippet/create state))
          (m! nil)
-         (d! :router/set {:name :home}))})
+         (d! :router/change {:name :home}))})
      (span {})))))

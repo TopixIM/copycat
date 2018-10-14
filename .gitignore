@@ -1,7 +1,7 @@
 
-/target/
+/target
 /dist
 /node_modules
-.cpcache/
 .shadow-cljs/
+.cpcache/
 .nrepl-port
