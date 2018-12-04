@@ -2,8 +2,7 @@
 (ns app.comp.list
   (:require [hsl.core :refer [hsl]]
             [respo-ui.core :as ui]
-            [respo.macros :refer [defcomp cursor-> list-> <> div button span pre]]
-            [verbosely.core :refer [verbosely!]]
+            [respo.core :refer [defcomp cursor-> list-> <> div button span pre]]
             [respo.comp.space :refer [=<]]
             [respo.comp.inspect :refer [comp-inspect]]
             [respo.util.list :refer [map-val]]
