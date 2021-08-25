@@ -8,7 +8,7 @@ Demo http://copycat.topix.im/
 
 ### Workflow
 
-Workflow https://github.com/Cumulo/cumulo-workflow
+Workflow https://github.com/Cumulo/cumulo-workflow.calcit/ .
 
 ### License
 
