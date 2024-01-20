@@ -4634,9 +4634,6 @@
                                       |h $ %{} :Leaf (:at 1645261179773) (:by |B1y7Rc-Zz) (:text |assoc)
                                       |l $ %{} :Leaf (:at 1645261179773) (:by |B1y7Rc-Zz) (:text |sid)
                                       |o $ %{} :Leaf (:at 1645261179773) (:by |B1y7Rc-Zz) (:text |new-store)
-              |x $ %{} :Expr (:at 1629811849639) (:by |B1y7Rc-Zz)
-                :data $ {}
-                  |T $ %{} :Leaf (:at 1629811849639) (:by |B1y7Rc-Zz) (:text |new-twig-loop!)
       :ns $ %{} :CodeEntry (:doc |)
         :code $ %{} :Expr (:at 1629811849639) (:by |B1y7Rc-Zz)
           :data $ {}
@@ -4700,7 +4697,6 @@
                     |j $ %{} :Leaf (:at 1629811849639) (:by |B1y7Rc-Zz) (:text |:refer)
                     |r $ %{} :Expr (:at 1629811849639) (:by |B1y7Rc-Zz)
                       :data $ {}
-                        |T $ %{} :Leaf (:at 1629811849639) (:by |B1y7Rc-Zz) (:text |new-twig-loop!)
                         |j $ %{} :Leaf (:at 1629811849639) (:by |B1y7Rc-Zz) (:text |clear-twig-caches!)
                 |yyl $ %{} :Expr (:at 1645260222447) (:by |B1y7Rc-Zz)
                   :data $ {}
