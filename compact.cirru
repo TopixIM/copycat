@@ -41,6 +41,7 @@
           :code $ quote
             defn main! ()
               println "\"Running mode:" $ if config/dev? "\"dev" "\"release"
+              if config/dev? $ load-console-formatter!
               render-app!
               connect!
               add-watch *store :changes $ fn (store prev) (render-app!)
