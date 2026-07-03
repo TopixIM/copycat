@@ -12,18 +12,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
 
-    - uses: actions/setup-node@v4
+    - uses: actions/setup-node@v6
       with:
-        node-version: 20
-        cache: 'yarn'
+        node-version: 24
 
-    - uses: calcit-lang/setup-cr@0.0.3
+    - name: Enable Corepack
+      run: |
+        corepack enable
+        corepack prepare yarn@4.12.0 --activate
+        yarn --version
+
+    - uses: calcit-lang/setup-cr@0.0.9
       with:
-        version: "0.8.46"
+        version: "0.12.47"
 
-    - run: caps --ci && cr --entry server --emit-ir -1
+    - run: caps --ci && cr --entry server ir
 
-    - run: yarn && yarn compile-page && yarn release-page
+    - run: yarn install --immutable && yarn compile-page && yarn release-page
 
     - run: mkdir -p dist-server && cp compact.cirru dist-server && cp package.json dist-server/
       name: Copy server scripts
