@@ -2,11 +2,12 @@
   "name": "copycat",
   "version": "0.1.0",
   "description": "Copycat",
+  "packageManager": "yarn@4.12.0",
   "main": "index.js",
   "scripts": {
-    "compile-page": "cr --emit-js --once",
+    "compile-page": "cr js",
     "release-page": "vite build --base=./",
-    "watch-page": "cr --emit-js"
+    "watch-page": "cr js --watch"
   },
   "repository": {
     "type": "git",
@@ -15,7 +16,7 @@
   "author": "jiyinyiyong",
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "^0.8.46"
+    "@calcit/procs": "^0.12.47"
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
