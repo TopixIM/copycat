@@ -22,11 +22,11 @@ jobs:
           corepack prepare yarn@4.12.0 --activate
           yarn --version
 
-      - uses: calcit-lang/setup-cr@0.0.9
+      - uses: calcit-lang/setup-calcit@v1
 
-      - run: caps --ci && cr --entry server ir
+      - run: caps --ci && calcit calcit.cirru --entry server ir
 
-      - run: yarn install --immutable && yarn compile-page && yarn release-page
+      - run: yarn install --immutable && calcit calcit.cirru js && yarn release-page
 
       - run: mkdir -p dist-server && cp calcit.cirru dist-server && cp package.json dist-server/
         name: Copy server scripts
