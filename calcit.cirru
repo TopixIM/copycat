@@ -163,7 +163,7 @@
                     comp-messages
                       option:unwrap-or
                         get-in store $ [] :session :messages
-                        []
+                        {}
                       {}
                       fn (info d!) (d! :session/remove-message info)
                     when dev? $ comp-reel (&map:get store :reel-length) ({})
