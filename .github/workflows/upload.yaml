@@ -6,6 +6,9 @@ on:
       - main
   pull_request: {}
 
+permissions:
+  contents: read
+
 jobs:
   test:
     runs-on: ubuntu-latest
@@ -23,10 +26,23 @@ jobs:
           yarn --version
 
       - uses: calcit-lang/setup-calcit@v1
+        with:
+          tools: calcit,caps
 
-      - run: caps --ci && calcit calcit.cirru --entry server ir
+      - name: Install dependencies
+        run: caps --ci && yarn install --immutable
 
-      - run: yarn install --immutable && calcit calcit.cirru js && yarn release-page
+      - name: Validate Calcit snapshot and types
+        run: |
+          calcit calcit.cirru edit format
+          git diff --exit-code -- calcit.cirru
+          calcit calcit.cirru --check-only
+          calcit calcit.cirru --entry server --check-only
+          calcit calcit.cirru analyze deprecated
+          calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
+
+      - name: Build browser client
+        run: calcit calcit.cirru js && yarn release-page
 
       - run: mkdir -p dist-server && cp calcit.cirru dist-server && cp package.json dist-server/
         name: Copy server scripts
