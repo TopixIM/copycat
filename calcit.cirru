@@ -761,12 +761,9 @@
                   op-id $ generate-id!
                   op-time $ -> (get-time!) (get-timestamp)
                 if config/dev? $ println |Dispatch! (str op) sid
-                if
-                  =
-                    option:unwrap-or (nth op 0) nil
-                    , :effect/persist
-                  persist-db!
-                  reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
+                match op
+                  (:effect/persist) (persist-db!)
+                  _ $ reset! *reel (reel-reducer @*reel updater op sid op-id op-time config/dev?)
           :examples $ []
           :schema $ :: 'Dynamic
         'get-backup-path! $ %{} 'CodeEntry (:doc |)

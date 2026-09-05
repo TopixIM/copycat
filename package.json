@@ -19,13 +19,13 @@
   "author": "jiyinyiyong",
   "license": "MIT",
   "dependencies": {
-    "@calcit/procs": "0.13.76"
+    "@calcit/procs": "0.13.77"
   },
   "devDependencies": {
     "bottom-tip": "^0.1.5",
     "copy-to-clipboard": "^3.3.3",
     "feather-icons": "^4.29.1",
     "url-parse": "^1.5.10",
-    "vite": "^6.4.3"
+    "vite": "8.2.2"
   }
 }
