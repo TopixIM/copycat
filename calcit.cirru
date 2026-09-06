@@ -401,7 +401,7 @@
                 list->
                   {} $ :style
                     merge ui/row $ {} (:padding 16) (:padding-bottom 120) (:align-items :flex-start) (:flex-wrap :wrap) (:overflow :auto)
-                  -> snippets (.to-list)
+                  -> (unsafe-coerce snippets 'Map) (.to-list)
                     .filter-pair $ fn (k snippet)
                       unsafe-coerce
                         includes?
@@ -608,7 +608,7 @@
                   =< 8 nil
                   list->
                     {} $ :style ui/row
-                    -> members (.to-list)
+                    -> (unsafe-coerce members 'Map) (.to-list)
                       .map-pair $ fn (k username)
                         [] k $ div
                           {} $ :style
@@ -952,7 +952,7 @@
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-members (sessions users)
-              -> sessions (.to-list)
+              -> (unsafe-coerce sessions 'Map) (.to-list)
                 .map-pair $ fn (k session)
                   [] k $ get-in users
                     [] (&map:get session :user-id) :name
