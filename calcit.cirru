@@ -401,7 +401,7 @@
                 list->
                   {} $ :style
                     merge ui/row $ {} (:padding 16) (:padding-bottom 120) (:align-items :flex-start) (:flex-wrap :wrap) (:overflow :auto)
-                  -> snippets (.to-list)
+                  -> (unsafe-coerce snippets 'Map) (.to-list)
                     .filter-pair $ fn (k snippet)
                       unsafe-coerce
                         includes?
@@ -608,7 +608,7 @@
                   =< 8 nil
                   list->
                     {} $ :style ui/row
-                    -> members (.to-list)
+                    -> (unsafe-coerce members 'Map) (.to-list)
                       .map-pair $ fn (k username)
                         [] k $ div
                           {} $ :style
@@ -761,12 +761,9 @@
                   op-id $ generate-id!
                   op-time $ -> (get-time!) (get-timestamp)
                 if config/dev? $ println |Dispatch! (str op) sid
-                if
-                  =
-                    option:unwrap-or (nth op 0) nil
-                    , :effect/persist
-                  persist-db!
-                  reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
+                match op
+                  (:effect/persist) (persist-db!)
+                  _ $ reset! *reel (reel-reducer @*reel updater op sid op-id op-time config/dev?)
           :examples $ []
           :schema $ :: 'Dynamic
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
@@ -955,7 +952,7 @@
         'twig-members $ %{} 'CodeEntry (:doc |)
           :code $ quote
             defn twig-members (sessions users)
-              -> sessions (.to-list)
+              -> (unsafe-coerce sessions 'Map) (.to-list)
                 .map-pair $ fn (k session)
                   [] k $ get-in users
                     [] (&map:get session :user-id) :name
