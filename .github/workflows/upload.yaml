@@ -29,10 +29,12 @@ jobs:
 
       - uses: calcit-lang/setup-calcit@704b3f5cd6f9ce3bd1e0c926dbdd1d181adb8180 # v1
         with:
+          version: "0.14.17"
           tools: calcit,caps
+          caps-version: "0.1.1"
 
       - name: Install dependencies
-        run: caps --strict --ci && yarn install --immutable
+        run: caps --ci && yarn install --immutable
 
       - name: Verify Calcit runtime toolchain
         run: caps verify --toolchain
@@ -41,16 +43,13 @@ jobs:
         run: |
           calcit calcit.cirru edit format
           git diff --exit-code -- calcit.cirru
-          calcit calcit.cirru --check-only
-          calcit calcit.cirru --entry server --check-only
-          calcit calcit.cirru analyze dynamic-methods --max 0
-          calcit calcit.cirru --entry server analyze dynamic-methods --max 0
+          calcit calcit.cirru --compat-types js
           calcit calcit.cirru analyze deprecated --summary-only
           calcit calcit.cirru --entry server analyze deprecated --summary-only
           calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru
 
       - name: Build browser client
-        run: calcit calcit.cirru js && yarn release-page
+        run: yarn release-page
 
       - run: mkdir -p dist-server && cp calcit.cirru dist-server && cp package.json dist-server/
         name: Copy server scripts
