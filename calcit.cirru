@@ -3,17 +3,11 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {}
-    :default $ {} (:description |)
-      :init-fn 'app.client/main!
-      :mode :native
-      :reload-fn 'app.client/reload!
+    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :native) (:reload-fn 'app.client/reload!)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |respo-feather.calcit/ |alerts.calcit/ |js-ffi/
       :type-slots $ {}
-    :server $ {} (:description |)
-      :init-fn 'app.server/main!
-      :mode :native
-      :reload-fn 'app.server/reload!
+    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
       :feature-policy $ {}
       :modules $ [] |lilac/ |recollect/ |memof/ |ws-edn.calcit/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit-wss/ |calcit.std/
       :type-slots $ {}
@@ -45,8 +39,7 @@
               ws-connect! (str |ws:// host |: port)
                 {}
                   :on-open $ fn (event) (simulate-login!)
-                  :on-close $ fn (event) (reset! *store nil)
-                    js/console.error "|Lost connection!"
+                  :on-close $ fn (event) (reset! *store nil) (js/console.error "|Lost connection!")
                   :on-data on-server-data
           :examples $ []
           :schema $ :: 'Dynamic
@@ -77,8 +70,7 @@
           :examples $ []
           :schema $ :: 'Dynamic
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target
-            js/document.querySelector |.app
+          :code $ quote $ def mount-target (js/document.querySelector |.app)
           :examples $ []
           :schema $ :: 'Dynamic
         'on-server-data $ %{} 'CodeEntry (:doc |)
@@ -166,8 +158,7 @@
                       get-in store $ [] :session :messages
                       {}
                     {}
-                    fn (info d!)
-                      d! :session/remove-message info
+                    fn (info d!) (d! :session/remove-message info)
                   when dev? $ comp-reel (&map:get store :reel-length) ({})
           :examples $ []
           :schema $ :: 'Dynamic
@@ -196,11 +187,7 @@
             div $ {} $ :style
               let
                   size 24
-                {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8)
-                  :background-color color
-                  :border-radius |50%
-                  :opacity 0.6
-                  :pointer-events :none
+                {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8) (:background-color color) (:border-radius |50%) (:opacity 0.6) (:pointer-events :none)
           :examples $ []
           :schema $ :: 'Dynamic
         'style-body $ %{} 'CodeEntry (:doc |)
@@ -240,8 +227,7 @@
                 :on-click $ fn (e d! m!) (on-close! m!)
               div
                 {}
-                  :style $ {} (:padding 16)
-                    :background-color :white
+                  :style $ {} (:padding 16) (:background-color :white)
                   :on-click $ fn $ e d! m!
                 , child-node
           :examples $ []
@@ -378,7 +364,7 @@
                 when (&map:get state :hint?)
                   div
                     {} $ :style $ {} (:position :absolute) (:bottom 16) (:left 16)
-                      :background-color $ hsl 0 0 0 0.5
+                      :background-color $ hsl 0 0 0
                       :color :white
                       :font-family ui/font-fancy
                       :padding "|0 8px"
@@ -446,7 +432,7 @@
         'style-toolbar $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-toolbar
             merge ui/row-parted $ {} (:width |100%) (:position :absolute) (:top 0) (:padding 8)
-              :background-color $ hsl 0 0 100 0.8
+              :background-color $ hsl 0 0 100
               :border $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
           :schema $ :: 'Dynamic
@@ -529,7 +515,7 @@
             div
               {} $ :style $ merge ui/row-center
                 {} (:height 48) (:justify-content :space-between) (:padding "|0 16px") (:font-size 16)
-                  :border-bottom $ str "|1px solid " $ hsl 0 0 0 0.1
+                  :border-bottom $ str "|1px solid " $ hsl 0 0 0
                   :font-family ui/font-fancy
               div
                 {}
@@ -633,9 +619,7 @@
           :schema $ :: 'Dynamic
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site
-            {} (:storage-key |copycat) (:storage-file |copycat.cirru) (:port 11012) (:title |Copycat)
-              :icon |http://cdn.tiye.me/logo/copycat.png
-              :theme |#eeeeff
+            {} (:storage-key |copycat) (:storage-file |copycat.cirru) (:port 11012) (:title |Copycat) (:icon |http://cdn.tiye.me/logo/copycat.png) (:theme |#eeeeff)
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
@@ -714,8 +698,7 @@
           :code $ quote $ defatom *initial-db
             if
               path-exists? $ w-log storage-file
-              do
-                println "|Found local EDN data"
+              do (println "|Found local EDN data")
                 merge schema/database $ parse-cirru-edn $ read-file storage-file
               do (println "|Found no data") schema/database
           :examples $ []
@@ -757,9 +740,7 @@
                 port $ option:unwrap-or (option:map p? parse-float) (&map:get config/site :port)
               run-server! port
               println $ str "|Server started on port:" port
-            do
-              ; "|init it before doing multi-threading"
-              identity @*reader-reel
+            do (; "|init it before doing multi-threading") (identity @*reader-reel)
             set-interval 200 $ fn () $ render-loop!
             set-interval 600000 $ fn () $ persist-db!
             on-control-c on-exit!
@@ -781,8 +762,7 @@
           :schema $ :: 'Dynamic
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println "|Code updated.")
-            if (not config/dev?)
-              raise "|reloading only happens in dev mode"
+            if (not config/dev?) (raise "|reloading only happens in dev mode")
             clear-twig-caches!
             reset! *reel $ refresh-reel @*reel @*initial-db updater
             sync-clients! @*reader-reel
@@ -811,9 +791,7 @@
                       dispatch! action sid
                   (:disconnect sid)
                     do (println "|Client closed!")
-                      dispatch!
-                        :: :session/disconnect
-                        , sid
+                      dispatch! (:: :session/disconnect) sid
                   _ $ println "|unknown data:" data
           :examples $ []
           :schema $ :: 'Dynamic
@@ -941,33 +919,22 @@
           :code $ quote $ defn updater (db op sid op-id op-time)
             match op
               (:session/connect) (session/connect db sid op-id op-time)
-              (:session/disconnect)
-                session/disconnect db sid op-id op-time
-              (:session/remove-message op-data)
-                session/remove-message db op-data sid op-id op-time
+              (:session/disconnect) (session/disconnect db sid op-id op-time)
+              (:session/remove-message op-data) (session/remove-message db op-data sid op-id op-time)
               (:user/log-in op-data) (user/log-in db op-data sid op-id op-time)
               (:user/sign-up op-data) (user/sign-up db op-data sid op-id op-time)
               (:user/log-out op-data) (user/log-out db op-data sid op-id op-time)
               (:router/change op-data) (router/change db op-data sid op-id op-time)
-              (:snippet/create op-data)
-                snippet/create-one db op-data sid op-id op-time
-              (:snippet/update op-data)
-                snippet/update-one db op-data sid op-id op-time
-              (:snippet/remove op-data)
-                snippet/remove-one db op-data sid op-id op-time
-              (:snippet/count-usage op-data)
-                snippet/count-usage db op-data sid op-id op-time
+              (:snippet/create op-data) (snippet/create-one db op-data sid op-id op-time)
+              (:snippet/update op-data) (snippet/update-one db op-data sid op-id op-time)
+              (:snippet/remove op-data) (snippet/remove-one db op-data sid op-id op-time)
+              (:snippet/count-usage op-data) (snippet/count-usage db op-data sid op-id op-time)
               _ $ do (eprintln "|Unknown op:" op) db
           :examples $ []
           :schema $ :: 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
-          :require
-            [] app.updater.session :as session
-            [] app.updater.user :as user
-            [] app.updater.router :as router
-            [] app.updater.snippet :as snippet
-            [] app.schema :as schema
+          :require ([] app.updater.session :as session) ([] app.updater.user :as user) ([] app.updater.router :as router) ([] app.updater.snippet :as snippet) ([] app.schema :as schema)
             [] respo-message.updater :refer $ [] update-messages
     'app.updater.router $ %{} 'FileEntry
       :defs $ {} $ 'change
