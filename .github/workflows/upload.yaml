@@ -29,7 +29,7 @@ jobs:
 
       - uses: calcit-lang/setup-calcit@704b3f5cd6f9ce3bd1e0c926dbdd1d181adb8180 # v1
         with:
-          version: "0.14.17"
+          version: "0.18.1"
           tools: calcit,caps
           caps-version: "0.1.1"
 
