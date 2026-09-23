@@ -14,3 +14,5 @@ yarn-error.log
 copycat.cirru
 
 backups/
+.pnp.cjs
+.pnp.loader.mjs
