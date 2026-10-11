@@ -150,10 +150,16 @@
                     , cursor
                   if (&map:get store :logged-in?)
                     case (&map:get router :name)
-                      :home $ comp-list states (&map:get store :snippets) (&map:get state :query)
-                      :create $ comp-editor (>> states :create) nil
+                      :home $ comp-list states
+                        decode-map-as (&map:get store :snippets) (:: 'Map 'String 'app.schema/Snippet)
+                        &map:get state :query
+                      :create $ comp-editor (>> states :create) (Option :none)
                       :edit $ comp-editor (>> states :edit)
-                        get-in store $ [] :snippets $ &map:get router :data
+                        match
+                          get-in store $ [] :snippets $ &map:get router :data
+                          (:some raw)
+                            Option :some $ decode-map-as raw 'app.schema/Snippet
+                          (:none) (Option :none)
                       :profile $ comp-profile (&map:get store :user) (&map:get router :data)
                       <> router
                     comp-login states
@@ -254,11 +260,14 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-editor (states snippet)
             let
-                cursor $ &map:get states :cursor
-                state $ or (&map:get states :data)
-                  {}
-                    :title $ or (&map:get snippet :title) |
-                    :content $ or (&map:get snippet :content) |
+                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
+                state $ if
+                  nil? $ &map:get states :data
+                  match snippet
+                    (:some item)
+                      app.schema/SnippetDraft :title (:title item) :content $ :content item
+                    (:none) (app.schema/SnippetDraft :title | :content |)
+                  decode-map-as (&map:get states :data) 'app.schema/SnippetDraft
               div
                 {} $ :style $ style/merge-styles ui/flex ui/column
                   {} (:padding 16) (:overflow :auto)
@@ -266,17 +275,21 @@
                   {} $ :style ui/column
                   div ({})
                     input $ {} (:style style/input)
-                      :value $ &map:get state :title
+                      :value $ :title state
                       :placeholder |Title
                       :on-input $ fn (e d!)
-                        d! cursor $ assoc state :title $ assert-type (&map:get e :value) 'Dynamic
+                        d! $ :: :states cursor $ {}
+                          :title $ decode-map-as (&map:get e :value) 'String
+                          :content $ :content state
                   =< nil 16
                   textarea $ {}
                     :style $ merge style/textarea $ {} (:min-width 720) (:min-height 400) (:font-family ui/font-code) (:font-size 12) (:line-height |16px)
                     :placeholder |Content
-                    :value $ &map:get state :content
+                    :value $ :content state
                     :on-input $ fn (e d!)
-                      d! cursor $ assoc state :content $ assert-type (&map:get e :value) 'Dynamic
+                      d! $ :: :states cursor $ {}
+                        :title $ :title state
+                        :content $ decode-map-as (&map:get e :value) 'String
                 =< nil 16
                 div
                   {} $ :style $ style/merge-styles ui/row-parted
@@ -285,14 +298,24 @@
                     :style $ merge style/button $ {}
                     :inner-text |Submit
                     :on-click $ fn (e d!)
-                      if (some? snippet)
-                        d! :snippet/update $ merge snippet state
-                        d! :snippet/create state
-                      d! cursor nil
-                      d! :router/change $ {} $ :name :home
+                      match snippet
+                        (:some item)
+                          d! $ :: :snippet/update $ {}
+                            :id $ :id item
+                            :title $ :title state
+                            :content $ :content state
+                            :edited-at $ :edited-at item
+                            :copied-times $ :copied-times item
+                        (:none)
+                          d! $ :: :snippet/create $ {}
+                            :title $ :title state
+                            :content $ :content state
+                      d! $ :: :states cursor nil
+                      d! $ :: :router/change $ {} (:name :home)
                   span $ {}
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'Option 'app.schema/Snippet)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.editor
           :require
@@ -323,12 +346,18 @@
             [] respo.comp.space :refer $ [] =<
     'app.comp.list $ %{} 'FileEntry
       :defs $ {}
+        'CardState $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct CardState (:hint? 'Bool)
+          :examples $ []
+          :schema $ :: 'StructDef
         'comp-card $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-card (states snippet)
             let
-                cursor $ &map:get states :cursor
-                state $ or (&map:get states :data)
-                  {} $ :hint? false
+                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
+                hint? $ if
+                  nil? $ &map:get states :data
+                  , false $ :hint?
+                    decode-map-as (&map:get states :data) 'app.comp.list/CardState
                 remove-plugin $ use-confirm (>> states :remove)
                   {} $ :text "|Sure to remove?"
               div
@@ -337,12 +366,11 @@
                   {} $ :style style-toolbar
                   div
                     {} $ :style ui/row
-                    <> $ &map:get snippet :title
+                    <> $ :title snippet
                     =< 8 nil
                     let
-                        x $ &map:get snippet :copied-times
-                      when
-                        and (number? x) (> x 0)
+                        x $ :copied-times snippet
+                      when (> x 0)
                         <> (str "|(" x "|)")
                           {} (:font-size 12)
                             :color $ hsl 0 0 80
@@ -350,64 +378,75 @@
                     span
                       {} (:style ui/center)
                         :on-click $ fn (e d!)
-                          d! :router/change $ {} (:name :edit)
-                            :data $ &map:get snippet :id
+                          d! $ :: :router/change $ {} (:name :edit)
+                            :data $ :id snippet
                       comp-i :edit 14 $ hsl 200 80 70
                   span
                     {}
                       :style $ {} $ :color :red
                       :on-click $ fn (e d!)
-                        .show remove-plugin d! $ fn () $ d! :snippet/remove (&map:get snippet :id)
+                        .show remove-plugin
+                          fn (plugin-cursor data)
+                            d! $ :: :states
+                              decode-map-as plugin-cursor $ :: 'List 'Dynamic
+                              , data
+                            , &unit
+                          fn ()
+                            d! $ :: :snippet/remove $ :id snippet
+                            , &unit
+                        , &unit
                     comp-i :delete 14 $ hsl 0 80 70
                 pre $ {}
-                  :inner-text $ &map:get snippet :content
+                  :inner-text $ :content snippet
                   :style style-code-area
                   :on-click $ fn (e d!)
-                    copy $ &map:get snippet :content
-                    d! :snippet/count-usage $ &map:get snippet :id
-                    d! cursor $ assoc state :hint? true
-                    js/setTimeout
-                      fn () $ d! cursor $ assoc state :hint? false
+                    copy-text! $ :content snippet
+                    d! $ :: :snippet/count-usage $ :id snippet
+                    d! $ :: :states cursor $ {} (:hint? true)
+                    js-ffi.browser/set-timeout!
+                      fn ()
+                        d! $ :: :states cursor $ {} (:hint? false)
+                        , &unit
                       , 2000
                     , &unit
-                when (&map:get state :hint?)
-                  div
-                    {} $ :style $ {} (:position :absolute) (:bottom 16) (:left 16)
-                      :background-color $ hsl 0 0 0
-                      :color :white
-                      :font-family ui/font-fancy
-                      :padding "|0 8px"
-                    <> |Copied
+                when hint? $ div
+                  {} $ :style $ {} (:position :absolute) (:bottom 16) (:left 16)
+                    :background-color $ hsl 0 0 0
+                    :color :white
+                    :font-family ui/font-fancy
+                    :padding "|0 8px"
+                  <> |Copied
                 .render remove-plugin
           :examples $ []
-          :schema $ :: 'Dynamic
-        'comp-list $ %{} 'CodeEntry (:doc |)
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Tag 'Dynamic) 'app.schema/Snippet
+        'comp-list $ %{} 'CodeEntry
+          :doc "|Render typed snippets; the Respo cursor tree keeps heterogeneous branch keys and values, while snippet fields remain concrete."
           :code $ quote $ defcomp comp-list (states snippets query)
-            if
-              = 0 $ count snippets
-              comp-no-snippets
+            if (empty? snippets) (comp-no-snippets)
               list->
                 {} $ :style $ merge ui/row
                   {} (:padding 16) (:padding-bottom 120) (:align-items :flex-start) (:flex-wrap :wrap) (:overflow :auto)
-                -> (unsafe-coerce snippets 'Map) (.to-list)
-                  .filter-pair $ fn (k snippet)
-                    unsafe-coerce
-                      includes?
-                        lower-case $ option:unwrap-or (get snippet :title) |
-                        lower-case $ option:unwrap-or query |
-                      , 'Bool
-                  .sort-by $ fn (pair)
-                    negate $ unsafe-coerce
-                      option:unwrap-or
-                        get-in pair $ [] 1 :copied-times
-                        , 0
-                      , 'Number
-                  .map-pair $ fn (k snippet)
-                    [] k $ comp-card
-                      >> states $ &map:get snippet :id
-                      , snippet
+                -> (map-entries snippets)
+                  .filter $ fn (entry)
+                    includes?
+                      lower-case $ :title $ :value entry
+                      lower-case query
+                  .sort-by $ fn (entry)
+                    hint-fn $ {}
+                      :args $ [] $ :: 'calcit.core/MapEntry 'String 'app.schema/Snippet
+                      :return 'Number
+                    negate $ :copied-times $ :value entry
+                  .map $ fn (entry)
+                    [] (:key entry)
+                      comp-card
+                        decode-map-as
+                          >> states $ :id $ :value entry
+                          :: 'Map 'Tag 'Dynamic
+                        :value entry
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Map 'String 'app.schema/Snippet) 'String
         'comp-no-snippets $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-no-snippets ()
             div
@@ -419,6 +458,12 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
             :args $ []
+        'copy-text! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn copy-text! (text) (copy text) &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'String
+            :features $ #{} :js-ffi
         'style-card $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-card
             {} (:white-space :nowrap) (:text-overflow :ellipsis) (:overflow :hidden) (:line-height |24px) (:width 400) (:cursor :pointer) (:margin-right 16) (:margin-top 16) (:position :relative)
@@ -659,22 +704,12 @@
         :code $ quote $ ns app.config
           :require $ [] app.util :refer $ [] get-env!
     'app.js-ffi.text $ %{} 'FileEntry
-      :defs $ {}
-        'JsStringHost $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ deftrait JsStringHost
-            .to-lower-case $ :: 'Fn $ {}
-              :args $ [] 'app.js-ffi.text/JsStringHost
-              :return 'String
-          :examples $ []
-          :ffi $ {} (:backend :js) (:kind :external-object)
-            :names $ {} $ :to-lower-case |toLowerCase
-          :schema $ :: 'Trait
-        'lower-case $ %{} 'CodeEntry (:doc |)
+      :defs $ {} $ 'lower-case
+        %{} 'CodeEntry (:doc |)
           :code $ quote $ defn lower-case (text)
-            let
-                host $ unsafe-coerce text 'JsStringHost
-              host .to-lower-case
+            js-ffi.contract/expect-string |String.toLowerCase $ js/String.prototype.toLowerCase.call text
           :examples $ []
+          :ffi $ {} (:backend :js) (:target :browser)
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ [] 'String
             :features $ #{} :js-ffi
@@ -684,6 +719,14 @@
       :defs $ {}
         'SiteConfig $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct SiteConfig (:storage-key 'String) (:storage-file 'String) (:port 'Number) (:title 'String) (:icon 'String) (:theme 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
+        'Snippet $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Snippet (:id 'String) (:title 'String) (:content 'String) (:edited-at 'Number) (:copied-times 'Number)
+          :examples $ []
+          :schema $ :: 'StructDef
+        'SnippetDraft $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct SnippetDraft (:title 'String) (:content 'String)
           :examples $ []
           :schema $ :: 'StructDef
         'database $ %{} 'CodeEntry (:doc |)
