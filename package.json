@@ -5,10 +5,10 @@
   "packageManager": "yarn@4.12.0",
   "main": "index.js",
   "scripts": {
-    "check-client": "calcit calcit.cirru --compat-types --check-only",
+    "check-client": "calcit calcit.cirru --check-only",
     "check-server": "calcit calcit.cirru --compat-types --entry server --check-only",
     "check-quality": "calcit calcit.cirru analyze quality --baseline config/calcit-quality.cirru",
-    "compile-page": "calcit calcit.cirru --compat-types js",
+    "compile-page": "calcit calcit.cirru js",
     "release-page": "vite build --base=./",
     "watch-page": "calcit calcit.cirru js --watch"
   },

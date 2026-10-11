@@ -72,12 +72,16 @@
             if config/dev? $ load-console-formatter!
             render-app!
             connect!
-            add-watch *store :changes $ fn (store prev) (render-app!)
-            add-watch *states :changes $ fn (states prev) (render-app!)
-            on-page-touch $ fn () $ if (nil? @*store) (connect!)
+            add-watch! *store :changes $ fn (store prev) (render-app!)
+            add-watch! *states :changes $ fn (states prev) (render-app!)
+            on-page-touch $ fn ()
+              when (nil? @*store) (connect!)
+              , &unit
             println "|App started!"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn mount-target ()
             respo.ffi.browser/narrow-element $ option:unwrap $ js-ffi.browser/query-selector |.app
@@ -98,22 +102,30 @@
             :args $ [] 'Dynamic
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
-            if
-              or (some? client-errors) (some? server-errors)
-              hud! |error $ str client-errors &newline server-errors
-              do (hud! |inactive nil) (remove-watch *store :changes) (remove-watch *states :changes) (clear-cache!) (render-app!)
-                add-watch *store :changes $ fn (store prev) (render-app!)
-                add-watch *states :changes $ fn (states prev) (render-app!)
-                println "|Code updated."
+            do
+              if
+                or (non-nil? client-errors) (non-nil? server-errors)
+                hud! |error $ str client-errors &newline server-errors
+                do (hud! |inactive nil) (remove-watch! *store :changes) (remove-watch! *states :changes) (clear-cache!) (render-app!)
+                  add-watch! *store :changes $ fn (store prev) (render-app!)
+                  add-watch! *states :changes $ fn (states prev) (render-app!)
+                  println "|Code updated."
+              , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render! (mount-target)
-              comp-container (&map:get @*states :states) @*store
+              comp-container
+                decode-map-as (&map:get @*states :states) (:: 'Map 'Dynamic 'Dynamic)
+                schema/decode-client-store @*store
               , dispatch!
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
             match
@@ -148,49 +160,56 @@
       :defs $ {}
         'comp-container $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-container (states store)
-            let
-                cursor $ []
-                state $ or (&map:get states :data)
-                  {} $ :query |
-                session $ &map:get store :session
-                router $ &map:get store :router
-                router-data $ &map:get router :data
-              if (nil? store) (comp-offline)
-                div
-                  {} $ :style $ merge ui/global ui/fullscreen ui/column
-                    {} $ :background-color "|hsl(0,0%,96%)"
-                  comp-navigation (&map:get store :logged-in?)
-                    decode-map-as (&map:get store :count) (:: 'Option 'Number)
-                    &map:get state :query
-                    , cursor
-                  if (&map:get store :logged-in?)
-                    case (&map:get router :name)
-                      :home $ comp-list states
-                        decode-map-as (&map:get store :snippets) (:: 'Map 'String 'app.schema/Snippet)
-                        &map:get state :query
-                      :create $ comp-editor (>> states :create) (Option :none)
-                      :edit $ comp-editor (>> states :edit)
-                        match
-                          get-in store $ [] :snippets $ &map:get router :data
-                          (:some raw)
-                            Option :some $ decode-map-as raw 'app.schema/Snippet
-                          (:none) (Option :none)
-                      :profile $ comp-profile
-                        app.schema/decode-user-view $ &map:get store :user
-                        decode-map-as (&map:get router :data) (:: 'Map 'String 'String)
-                      <> router
-                    comp-login states
-                  comp-status-color $ &map:get store :color
-                  when dev? $ comp-inspect |Store store $ {} (:bottom 0) (:left 0) (:max-width |100%)
-                  comp-messages
-                    option:unwrap-or
-                      get-in store $ [] :session :messages
+            match store
+              (:none) (comp-offline)
+              (:some store)
+                let
+                    cursor $ []
+                    query $ let
+                        data $ &map:get states :data
+                      if (nil? data) | $ decode-map-as
+                        or
+                          &map:get
+                            decode-map-as data $ :: 'Map 'Tag 'Dynamic
+                            , :query
+                          , |
+                        , 'String
+                    view $ :view store
+                    logged-in? $ match view
+                      (:guest) false
+                      (:authenticated _user _route _snippets _count _color) true
+                    count-members $ match view
+                      (:guest) (Option :none)
+                      (:authenticated _user _route _snippets n _color) (Option :some n)
+                  div
+                    {} $ :style $ merge ui/global ui/fullscreen ui/column
+                      {} $ :background-color "|hsl(0,0%,96%)"
+                    comp-navigation logged-in? count-members query cursor
+                    match view
+                      (:guest) (comp-login states)
+                      (:authenticated user route snippets _count _color)
+                        match route
+                          (:home) (comp-list states snippets query)
+                          (:create)
+                            comp-editor (>> states :create) (Option :none)
+                          (:edit id)
+                            comp-editor (>> states :edit) (get snippets id)
+                          (:profile members) (comp-profile user members)
+                          (:unknown router)
+                            <> $ format-cirru-edn router
+                    match view
+                      (:guest) nil
+                      (:authenticated _user _route _snippets _count color) (comp-status-color color)
+                    when dev? $ comp-inspect |Store store $ {} (:bottom 0) (:left 0) (:max-width |100%)
+                    comp-messages
+                      schema/messages-to-wire $ :messages $ :session store
                       {}
-                    {}
-                    fn (info d!) (d! :session/remove-message info)
-                  when dev? $ comp-reel (&map:get store :reel-length) ({})
+                      fn (info d!)
+                        d! $ :: :session/remove-message info
+                    when dev? $ comp-reel (:reel-length store) ({})
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Option 'app.schema/ClientStore)
         'comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-offline ()
             div
@@ -332,7 +351,7 @@
                   span $ {}
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'Option 'app.schema/Snippet)
+            :args $ [] (:: 'Map 'Dynamic 'Dynamic) (:: 'Option 'app.schema/Snippet)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.editor
           :require
@@ -567,7 +586,7 @@
                       :on-click $ on-submit (:username state) (:password state) false
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :args $ [] $ :: 'Map 'Dynamic 'Dynamic
         'initial-state $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def initial-state (LoginState :username | :password |)
           :examples $ []
@@ -739,6 +758,21 @@
         :code $ quote $ ns app.js-ffi.text
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'ClientRoute $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum ClientRoute (:home) (:create) (:edit 'String)
+            :profile $ :: 'Map 'String 'String
+            :unknown $ :: 'Map 'Tag 'Dynamic
+          :examples $ []
+          :schema $ :: 'Enum
+        'ClientStore $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct ClientStore (:session 'app.schema/Session) (:reel-length 'Number) (:view 'app.schema/ClientView)
+          :examples $ []
+          :schema $ :: 'StructDef
+        'ClientView $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum ClientView (:guest)
+            :authenticated 'app.schema/UserView 'app.schema/ClientRoute (:: 'Map 'String 'app.schema/Snippet) 'Number 'String
+          :examples $ []
+          :schema $ :: 'Enum
         'Message $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Message (:id 'String) (:text 'String)
           :examples $ []
@@ -795,6 +829,43 @@
               :snippets $ do snippet $ {}
           :examples $ []
           :schema $ :: 'Dynamic
+        'decode-client-route $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-client-route (raw)
+            let
+                router $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
+                name $ decode-map-as (&map:get router :name) 'Tag
+              match name
+                :home $ %:: ClientRoute :home
+                :create $ %:: ClientRoute :create
+                :edit $ %:: ClientRoute :edit $ decode-map-as (&map:get router :data) 'String
+                :profile $ %:: ClientRoute :profile $ decode-map-as (&map:get router :data) (:: 'Map 'String 'String)
+                _ $ %:: ClientRoute :unknown router
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ClientRoute)
+            :args $ [] 'Dynamic
+        'decode-client-store $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-client-store (raw)
+            if (nil? raw) (Option :none)
+              let
+                  store $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
+                  session $ &map:get
+                    decode-sessions $ {} $ |current (&map:get store :session)
+                    , |current
+                  length $ decode-map-as (&map:get store :reel-length) 'Number
+                  view $ if
+                    decode-map-as (&map:get store :logged-in?) 'Bool
+                    %:: ClientView :authenticated
+                      decode-user-view $ &map:get store :user
+                      decode-client-route $ &map:get store :router
+                      decode-map-as (&map:get store :snippets) (:: 'Map 'String 'app.schema/Snippet)
+                      decode-map-as (&map:get store :count) 'Number
+                      decode-map-as (&map:get store :color) 'String
+                    %:: ClientView :guest
+                Option :some $ &%{} ClientStore :session session :reel-length length :view view
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Option 'app.schema/ClientStore
         'decode-server-event $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-server-event (raw)
             match raw $
@@ -842,6 +913,16 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic
             :return $ :: 'Map 'String 'app.schema/User
+        'messages-to-wire $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn messages-to-wire (messages)
+            filter-map-kv messages $ fn (id message)
+              MapEntryDecision :keep id $ {}
+                :id $ :id message
+                :text $ :text message
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] $ :: 'Map 'String 'app.schema/Message
+            :return $ :: 'Map 'String 'Dynamic
         'notification $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def notification
             {} (:id nil) (:kind nil) (:text nil)
