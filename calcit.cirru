@@ -7,7 +7,7 @@
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |respo-feather.calcit/ |alerts.calcit/ |js-ffi/
       :type-slots $ {}
-    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
+    :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ [] |recollect/ |memof/ |ws-edn.calcit/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit-wss/ |calcit.std/
       :type-slots $ {}
@@ -160,7 +160,9 @@
                           (:some raw)
                             Option :some $ decode-map-as raw 'app.schema/Snippet
                           (:none) (Option :none)
-                      :profile $ comp-profile (&map:get store :user) (&map:get router :data)
+                      :profile $ comp-profile
+                        app.schema/decode-user-view $ &map:get store :user
+                        decode-map-as (&map:get router :data) (:: 'Map 'String 'String)
                       <> router
                     comp-login states
                   comp-status-color $ &map:get store :color
@@ -644,7 +646,7 @@
                 {} $ :padding 16
               div
                 {} $ :style $ {} (:font-family ui/font-fancy) (:font-size 32) (:font-weight 100)
-                <> $ str "|Hello! " $ &map:get user :name
+                <> $ str "|Hello! " $ :name user
               =< nil 16
               div
                 {} $ :style ui/row
@@ -652,33 +654,36 @@
                 =< 8 nil
                 list->
                   {} $ :style ui/row
-                  -> (unsafe-coerce members 'Map) (.to-list)
-                    .map-pair $ fn (k username)
-                      [] k $ div
-                        {} $ :style $ {} (:padding "|0 8px")
-                          :border $ str "|1px solid " $ hsl 0 0 80
-                          :border-radius |16px
-                          :margin "|0 4px"
-                        <> username
+                  -> (map-entries members)
+                    .map $ fn (entry)
+                      [] (:key entry)
+                        div
+                          {} $ :style $ {} (:padding "|0 8px")
+                            :border $ str "|1px solid " $ hsl 0 0 80
+                            :border-radius |16px
+                            :margin "|0 4px"
+                          <> $ :value entry
               =< nil 48
               div ({})
                 button
                   {}
                     :style $ merge ui/button
-                    :on-click $ fn (e d! m!)
-                      js/location.replace $ str js/location.origin |?time= $ .now js/Date
-                      , &unit
+                    :on-click $ fn (e d!)
+                      js-ffi.browser/location-replace! $ str
+                        :origin $ js-ffi.browser/location-snapshot
+                        , |?time= $ js-ffi.shared/now-ms
                   <> |Refresh
                 =< 8 nil
                 button
                   {}
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
-                    :on-click $ fn (e dispatch!) (dispatch! :user/log-out nil)
-                      js/localStorage.removeItem $ :storage-key config/site
-                      , &unit
+                    :on-click $ fn (e dispatch!)
+                      dispatch! $ :: :user/log-out nil
+                      js-ffi.browser/storage-remove! $ :storage-key config/site
                   <> "|Log out"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'app.schema/UserView $ :: 'Map 'String 'String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.profile
           :require
@@ -688,6 +693,8 @@
             [] respo.core :refer $ [] defcomp list-> <> span div button
             [] respo.comp.space :refer $ [] =<
             [] app.config :as config
+            [] js-ffi.browser :as js-ffi.browser
+            [] js-ffi.shared :as js-ffi.shared
     'app.config $ %{} 'FileEntry
       :defs $ {}
         'dev? $ %{} 'CodeEntry (:doc |)
@@ -717,6 +724,25 @@
         :code $ quote $ ns app.js-ffi.text
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'Message $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Message (:id 'String) (:text 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
+        'RouteRequest $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct RouteRequest (:name 'Tag)
+            :data $ :: 'Option 'String
+            :router $ :: 'Option 'Nil
+            :title $ :: 'Option 'String
+          :examples $ []
+          :schema $ :: 'StructDef
+        'Session $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Session (:id 'String)
+            :user-id $ :: 'Option 'String
+            :nickname $ :: 'Option 'String
+            :router 'app.schema/RouteRequest
+            :messages $ :: 'Map 'String 'app.schema/Message
+          :examples $ []
+          :schema $ :: 'StructDef
         'SiteConfig $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct SiteConfig (:storage-key 'String) (:storage-file 'String) (:port 'Number) (:title 'String) (:icon 'String) (:theme 'String)
           :examples $ []
@@ -729,6 +755,18 @@
           :code $ quote $ defstruct SnippetDraft (:title 'String) (:content 'String)
           :examples $ []
           :schema $ :: 'StructDef
+        'User $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct User (:id 'String) (:name 'String) (:password 'String)
+            :nickname $ :: 'Option 'String
+            :avatar $ :: 'Option 'String
+          :examples $ []
+          :schema $ :: 'StructDef
+        'UserView $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct UserView (:id 'String) (:name 'String)
+            :nickname $ :: 'Option 'String
+            :avatar $ :: 'Option 'String
+          :examples $ []
+          :schema $ :: 'StructDef
         'database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def database
             {}
@@ -737,6 +775,45 @@
               :snippets $ do snippet $ {}
           :examples $ []
           :schema $ :: 'Dynamic
+        'decode-sessions $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-sessions (raw)
+            filter-map-kv
+              decode-map-as raw $ :: 'Map 'String $ :: 'Map 'Tag 'Dynamic
+              fn (sid session)
+                let
+                    router $ without-nil-fields
+                      decode-map-as (&map:get session :router) (:: 'Map 'Tag 'Dynamic)
+                      [] :data :router :title
+                    normalized $ assoc
+                      without-nil-fields session $ [] :user-id :nickname
+                      , :router router
+                  MapEntryDecision :keep sid $ decode-map-as normalized 'app.schema/Session
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Map 'String 'app.schema/Session
+        'decode-user-view $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-user-view (raw)
+            decode-map-as
+              without-nil-fields
+                decode-map-as raw $ :: 'Map 'Tag 'Dynamic
+                [] :nickname :avatar
+              , 'app.schema/UserView
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/UserView)
+            :args $ [] 'Dynamic
+        'decode-users $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-users (raw)
+            filter-map-kv
+              decode-map-as raw $ :: 'Map 'String $ :: 'Map 'Tag 'Dynamic
+              fn (uid user)
+                MapEntryDecision :keep uid $ decode-map-as
+                  without-nil-fields user $ [] :nickname :avatar
+                  , 'app.schema/User
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'Dynamic
+            :return $ :: 'Map 'String 'app.schema/User
         'notification $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def notification
             {} (:id nil) (:kind nil) (:text nil)
@@ -766,6 +843,18 @@
             {} (:name nil) (:id nil) (:nickname nil) (:avatar nil) (:password nil)
           :examples $ []
           :schema $ :: 'Dynamic
+        'without-nil-fields $ %{} 'CodeEntry
+          :doc "|Legacy wire/storage adapter only: remove named nil optional fields before typed decoding. Do not change persisted or transmitted Map representations."
+          :code $ quote $ defn without-nil-fields (raw fields)
+            foldl fields raw $ fn (result field)
+              if
+                nil? $ &map:get result field
+                dissoc result field
+                , result
+          :examples $ []
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'List 'Tag)
+            :return $ :: 'Map 'Tag 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.server $ %{} 'FileEntry
@@ -969,20 +1058,31 @@
                   :router $ assoc router :data $ case-default (&map:get router :name) ({})
                     :home $ {}
                     :edit $ &map:get router :data
-                    :profile $ twig-members (&map:get db :sessions) (&map:get db :users)
+                    :profile $ twig-members
+                      app.schema/decode-sessions $ &map:get db :sessions
+                      app.schema/decode-users $ &map:get db :users
                   :snippets $ &map:get db :snippets
                   :count $ count $ &map:get db :sessions
                   :color $ rand-hex-color!
                 , nil
           :examples $ []
           :schema $ :: 'Dynamic
-        'twig-members $ %{} 'CodeEntry (:doc |)
+        'twig-members $ %{} 'CodeEntry
+          :doc "|Map session ids to concrete display names. Keep an empty name for guests or sessions whose user is absent; never expose an Option or list where the profile expects a name map."
           :code $ quote $ defn twig-members (sessions users)
-            -> (unsafe-coerce sessions 'Map) (.to-list)
-              .map-pair $ fn (k session)
-                [] k $ get-in users $ [] (&map:get session :user-id) :name
+            filter-map-kv sessions $ fn (sid session)
+              let
+                  username $ match (:user-id session)
+                    (:none) |
+                    (:some uid)
+                      match (get users uid)
+                        (:none) |
+                        (:some user) (:name user)
+                MapEntryDecision :keep sid username
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] (:: 'Map 'String 'app.schema/Session) (:: 'Map 'String 'app.schema/User)
+            :return $ :: 'Map 'String 'String
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.twig.container
           :require
