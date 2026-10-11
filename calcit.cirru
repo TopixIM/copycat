@@ -3,13 +3,13 @@
   :about "|Machine-generated snapshot. Do not edit directly — changes will be overwritten. Use `calcit query` to inspect and `calcit edit`/`calcit tree` to modify. Run `calcit docs agents --contract` before mutations; use `--full` for first orientation or changed contract digest. Manual edits must follow format and schema conventions, then run `calcit edit format`."
   :package |app
   :entries $ {}
-    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :native) (:reload-fn 'app.client/reload!)
+    :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :js) (:reload-fn 'app.client/reload!) (:target :browser)
       :feature-policy $ {}
-      :modules $ [] |respo.calcit/ |lilac/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |respo-feather.calcit/ |alerts.calcit/ |js-ffi/
+      :modules $ [] |respo.calcit/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |respo-feather.calcit/ |alerts.calcit/ |js-ffi/
       :type-slots $ {}
     :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!)
       :feature-policy $ {}
-      :modules $ [] |lilac/ |recollect/ |memof/ |ws-edn.calcit/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit-wss/ |calcit.std/
+      :modules $ [] |recollect/ |memof/ |ws-edn.calcit/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit-wss/ |calcit.std/
       :type-slots $ {}
   :files $ {}
     'app.client $ %{} 'FileEntry
@@ -35,7 +35,7 @@
                 raw-host $ .-host query
                 raw-port $ .-port query
                 host $ if (js-present? raw-host) (unsafe-coerce raw-host String) (.-hostname location)
-                port $ if (js-present? raw-port) (unsafe-coerce raw-port String) (&map:get config/site :port)
+                port $ if (js-present? raw-port) (unsafe-coerce raw-port String) (:port config/site)
               ws-connect! (str |ws:// host |: port)
                 {}
                   :on-open $ fn (event) (simulate-login!)
@@ -70,9 +70,12 @@
           :examples $ []
           :schema $ :: 'Dynamic
         'mount-target $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def mount-target (js/document.querySelector |.app)
+          :code $ quote $ defn mount-target ()
+            respo.ffi.browser/narrow-element $ option:unwrap $ js-ffi.browser/query-selector |.app
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.dom/DomElement)
+            :args $ []
+            :features $ #{} :js-ffi
         'on-server-data $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-server-data (data)
             match data $
@@ -95,7 +98,7 @@
           :schema $ :: 'Dynamic
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
-            render! mount-target
+            render! (mount-target)
               comp-container (&map:get @*states :states) @*store
               , dispatch!
           :examples $ []
@@ -103,7 +106,7 @@
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
             let
-                raw $ storage-get $ &map:get config/site :storage-key
+                raw $ storage-get $ :storage-key config/site
               if (option:some? raw)
                 do (println "|Found storage.")
                   dispatch! $ :: :user/log-in $ parse-cirru-edn (option:unwrap-or raw |)
@@ -166,12 +169,12 @@
           :code $ quote $ defcomp comp-offline ()
             div
               {} $ :style $ merge ui/global ui/fullscreen ui/column-dispersive
-                {} $ :background-color $ &map:get config/site :theme
+                {} $ :background-color $ :theme config/site
               div $ {} $ :style
                 {} $ :height 0
               div $ {} $ :style
                 {}
-                  :background-image $ str "|url(" (&map:get config/site :icon) "|)"
+                  :background-image $ str "|url(" (:icon config/site) "|)"
                   :width 128
                   :height 128
                   :background-size :contain
@@ -494,7 +497,7 @@
           :code $ quote $ defn on-submit (username password signup?)
             fn (e dispatch!)
               dispatch! (if signup? :user/sign-up :user/log-in) ([] username password)
-              js/localStorage.setItem (&map:get config/site :storage-key)
+              js/localStorage.setItem (:storage-key config/site)
                 format-cirru-edn $ [] username password
           :examples $ []
           :schema $ :: 'Dynamic
@@ -522,7 +525,7 @@
                   :on-click $ fn (e d!)
                     d! :router/change $ {} $ :name :home
                   :style $ style/merge-styles ui/row-center $ {} (:cursor :pointer)
-                <> (&map:get config/site :title) nil
+                <> (:title config/site) nil
                 =< 24 nil
                 div
                   {}
@@ -596,7 +599,7 @@
                   {}
                     :style $ merge ui/button $ {} (:color :red) (:border-color :red)
                     :on-click $ fn (e dispatch!) (dispatch! :user/log-out nil)
-                      js/localStorage.removeItem $ &map:get config/site :storage-key
+                      js/localStorage.removeItem $ :storage-key config/site
                       , &unit
                   <> "|Log out"
           :examples $ []
@@ -619,9 +622,9 @@
           :schema $ :: 'Dynamic
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site
-            {} (:storage-key |copycat) (:storage-file |copycat.cirru) (:port 11012) (:title |Copycat) (:icon |http://cdn.tiye.me/logo/copycat.png) (:theme |#eeeeff)
+            app.schema/SiteConfig :storage-key |copycat :storage-file |copycat.cirru :port 11012 :title |Copycat :icon |http://cdn.tiye.me/logo/copycat.png :theme |#eeeeff
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'app.schema/SiteConfig
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.config
           :require $ [] app.util :refer $ [] get-env!
@@ -649,6 +652,10 @@
         :code $ quote $ ns app.js-ffi.text
     'app.schema $ %{} 'FileEntry
       :defs $ {}
+        'SiteConfig $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct SiteConfig (:storage-key 'String) (:storage-file 'String) (:port 'Number) (:title 'String) (:icon 'String) (:theme 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
         'database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def database
             {}
@@ -731,13 +738,14 @@
                 str $ &map:get now :month
                 str (&map:get now :day) |-snapshot.cirru
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'String)
+            :args $ []
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
             let
                 p? $ get-env |port
-                port $ option:unwrap-or (option:map p? parse-float) (&map:get config/site :port)
+                port $ option:unwrap-or (option:map p? parse-float) (:port config/site)
               run-server! port
               println $ str "|Server started on port:" port
             do (; "|init it before doing multi-threading") (identity @*reader-reel)
@@ -801,7 +809,7 @@
               str calcit-dirname $ :storage-file config/site
               str calcit-dirname |/ $ :storage-file config/site
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sync-clients! (reel)
             wss-each! $ fn (sid)
