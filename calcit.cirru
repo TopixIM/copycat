@@ -144,7 +144,10 @@
                 div
                   {} $ :style $ merge ui/global ui/fullscreen ui/column
                     {} $ :background-color "|hsl(0,0%,96%)"
-                  comp-navigation (&map:get store :logged-in?) (&map:get store :count) (&map:get state :query) cursor
+                  comp-navigation (&map:get store :logged-in?)
+                    decode-map-as (&map:get store :count) (:: 'Option 'Number)
+                    &map:get state :query
+                    , cursor
                   if (&map:get store :logged-in?)
                     case (&map:get router :name)
                       :home $ comp-list states (&map:get store :snippets) (&map:get state :query)
@@ -181,10 +184,12 @@
               div
                 {}
                   :style $ {} (:cursor :pointer) (:line-height |32px)
-                  :on-click $ fn (e d!) (d! :effect/connect nil)
+                  :on-click $ fn (e d!)
+                    d! $ :: :effect/connect
                 <> "|No connection..." $ {} (:font-family ui/font-fancy) (:font-size 24)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ []
         'comp-status-color $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-status-color (color)
             div $ {} $ :style
@@ -192,7 +197,8 @@
                   size 24
                 {} (:width size) (:height size) (:position :absolute) (:bottom 60) (:left 8) (:background-color color) (:border-radius |50%) (:opacity 0.6) (:pointer-events :none)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'String
         'style-body $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-body
             {} $ :padding "|8px 16px"
@@ -411,7 +417,8 @@
                 :font-size 20
               <> "|No snippets"
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ []
         'style-card $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-card
             {} (:white-space :nowrap) (:text-overflow :ellipsis) (:overflow :hidden) (:line-height |24px) (:width 400) (:cursor :pointer) (:margin-right 16) (:margin-top 16) (:position :relative)
@@ -453,11 +460,17 @@
             app.js-ffi.text :refer $ lower-case
     'app.comp.login $ %{} 'FileEntry
       :defs $ {}
+        'LoginState $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct LoginState (:username 'String) (:password 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
         'comp-login $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-login (states)
             let
-                cursor $ &map:get states :cursor
-                state $ or (&map:get states :data) initial-state
+                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
+                state $ if
+                  nil? $ &map:get states :data
+                  , initial-state $ decode-map-as (&map:get states :data) 'app.comp.login/LoginState
               div
                 {} $ :style $ style/merge-styles ui/flex ui/center
                 div ({})
@@ -465,42 +478,54 @@
                     {} $ :style $ {}
                     div ({})
                       input $ {} (:placeholder |Username)
-                        :value $ &map:get state :username
+                        :value $ :username state
                         :style ui/input
                         :on-input $ fn (e d!)
-                          d! cursor $ assoc state :username $ assert-type (&map:get e :value) 'Dynamic
+                          d! $ :: :states cursor $ {}
+                            :username $ decode-map-as (&map:get e :value) 'String
+                            :password $ :password state
                     =< nil 8
                     div ({})
                       input $ {} (:placeholder |Password)
-                        :value $ &map:get state :password
+                        :value $ :password state
                         :style ui/input
                         :on-input $ fn (e d!)
-                          d! cursor $ assoc state :password $ assert-type (&map:get e :value) 'Dynamic
+                          d! $ :: :states cursor $ {}
+                            :username $ :username state
+                            :password $ decode-map-as (&map:get e :value) 'String
                   =< nil 8
                   div
                     {} $ :style $ {} (:text-align :right)
                     span $ {} (:inner-text "|Sign up")
                       :style $ merge style/link
-                      :on-click $ on-submit (&map:get state :username) (&map:get state :password) true
+                      :on-click $ on-submit (:username state) (:password state) true
                     =< 8 nil
                     span $ {} (:inner-text "|Log in")
                       :style $ merge style/link
-                      :on-click $ on-submit (&map:get state :username) (&map:get state :password) false
+                      :on-click $ on-submit (:username state) (:password state) false
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
         'initial-state $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ def initial-state
-            {} (:username |) (:password |)
+          :code $ quote $ def initial-state (LoginState :username | :password |)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'app.comp.login/LoginState
         'on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-submit (username password signup?)
             fn (e dispatch!)
-              dispatch! (if signup? :user/sign-up :user/log-in) ([] username password)
-              js/localStorage.setItem (:storage-key config/site)
+              dispatch! $ if signup?
+                :: :user/sign-up $ [] username password
+                :: :user/log-in $ [] username password
+              js-ffi.browser/storage-set! (:storage-key config/site)
                 format-cirru-edn $ [] username password
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {}
+            :args $ [] 'String 'String 'Bool
+            :return $ :: 'Fn $ {} (:return 'Unit)
+              :args $ [] (:: 'Map 'Tag 'Dynamic)
+                :: 'Fn $ {} (:return 'Unit)
+                  :args $ [] 'Enum
+              :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.login
           :require
@@ -523,7 +548,7 @@
               div
                 {}
                   :on-click $ fn (e d!)
-                    d! :router/change $ {} $ :name :home
+                    d! $ :: :router/change $ {} (:name :home)
                   :style $ style/merge-styles ui/row-center $ {} (:cursor :pointer)
                 <> (:title config/site) nil
                 =< 24 nil
@@ -531,7 +556,7 @@
                   {}
                     :style $ {} $ :cursor :pointer
                     :on-click $ fn (e d!)
-                      d! :router/change $ {} (:name :create) (:data nil)
+                      d! $ :: :router/change $ {} (:name :create) (:data nil)
                   comp-i :plus 14 $ hsl 200 80 70
                 =< 24 nil
                 input $ {}
@@ -539,17 +564,22 @@
                   :value query
                   :placeholder |Filter...
                   :on-input $ fn (e d!)
-                    d! parent-cursor $ {} $ :query (&map:get e :value)
+                    d! $ :: :states parent-cursor $ {}
+                      :query $ decode-map-as (&map:get e :value) 'String
               div
                 {}
                   :style $ {} $ :cursor |pointer
                   :on-click $ fn (e d!)
-                    d! :router/change $ {} $ :name :profile
+                    d! $ :: :router/change $ {} (:name :profile)
                 <> $ if logged-in? |Me |Guest
                 =< 8 nil
-                <> count-members
+                match count-members
+                  (:some n)
+                    <> $ str n
+                  (:none) (<> |)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
+            :args $ [] 'Bool (:: 'Option 'Number) 'String $ :: 'List 'Dynamic
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.navigation
           :require
@@ -867,8 +897,10 @@
           :doc "|Combines heterogeneous Respo style maps at the rendering boundary."
           :code $ quote $ defn merge-styles (x0 & xs) (reduce xs x0 &merge)
           :examples $ []
-          :schema $ :: 'Fn $ {} (:rest 'Map) (:return 'Map)
-            :args $ [] 'Map
+          :schema $ :: 'Fn $ {}
+            :args $ [] $ :: 'Map 'Tag 'Dynamic
+            :rest $ :: 'Map 'Tag 'Dynamic
+            :return $ :: 'Map 'Tag 'Dynamic
         'textarea $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def textarea (merge ui/textarea)
           :examples $ []
