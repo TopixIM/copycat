@@ -19,44 +19,53 @@
             {} $ :states $ {}
               :cursor $ []
           :examples $ []
-          :schema $ :: 'Dynamic
-        '*store $ %{} 'CodeEntry (:doc |)
+          :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
+        '*store $ %{} 'CodeEntry
+          :doc "|Raw patch-twig transport cache: its heterogeneous wire values remain Dynamic here; components decode concrete application models before use. Do not store nominal DTOs in the patch base."
           :code $ quote $ defatom *store nil
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Ref 'Dynamic
         'connect! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect! ()
             let
-                location $ unsafe-coerce js/location JsObject
-                url-obj $ unsafe-coerce
-                  url-parse (.-href location) true
-                  , JsObject
-                query $ unsafe-coerce (.-query url-obj) JsObject
-                raw-host $ .-host query
-                raw-port $ .-port query
-                host $ if (js-present? raw-host) (unsafe-coerce raw-host String) (.-hostname location)
-                port $ if (js-present? raw-port) (unsafe-coerce raw-port String) (:port config/site)
+                location $ js-ffi.browser/location-snapshot
+                query $ shared/search-params-create $ :search location
+                host $ option:unwrap-or (shared/search-params-get query |host) (:hostname location)
+                port $ option:unwrap-or (shared/search-params-get query |port)
+                  str $ :port config/site
               ws-connect! (str |ws:// host |: port)
                 {}
                   :on-open $ fn (event) (simulate-login!)
-                  :on-close $ fn (event) (reset! *store nil) (js/console.error "|Lost connection!")
+                  :on-close $ fn (event) (reset! *store nil) (println "|Lost connection!") &unit
                   :on-data on-server-data
+              , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
-        'dispatch! $ %{} 'CodeEntry (:doc |)
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
+        'dispatch! $ %{} 'CodeEntry
+          :doc "|Respo/wire boundary: heterogeneous operation payloads remain open; decode the states cursor before the published state updater. Remote operations retain their anonymous-enum wire representation."
           :code $ quote $ defn dispatch! (op)
             when
               and config/dev? $ match op
                 (:states _cursor _state) false
                 _ true
-              js/console.log |Dispatch op
+              println |Dispatch op
             match op
               (:states cursor s)
-                reset! *states $ update-states @*states cursor s
+                do
+                  reset! *states $ decode-map-as
+                    update-states @*states
+                      decode-map-as cursor $ :: 'List 'Dynamic
+                      , s
+                    :: 'Map 'Tag 'Dynamic
+                  , &unit
               (:effect/connect) (connect!)
               _ $ ws-send! op
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Dynamic
+            :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -77,14 +86,16 @@
             :args $ []
             :features $ #{} :js-ffi
         'on-server-data $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn on-server-data (data)
-            match data $
-              :patch changes
-              do
-                when config/dev? $ js/console.log |Changes changes
-                reset! *store $ patch-twig @*store changes
+          :code $ quote $ defn on-server-data (raw)
+            match (schema/decode-server-event raw)
+              (:patch changes)
+                do
+                  when config/dev? $ println |Changes changes
+                  reset! *store $ patch-twig @*store changes
+                  , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Dynamic
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -105,14 +116,18 @@
           :schema $ :: 'Dynamic
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
-            let
-                raw $ storage-get $ :storage-key config/site
-              if (option:some? raw)
+            match
+              storage-get $ :storage-key config/site
+              (:some raw)
                 do (println "|Found storage.")
-                  dispatch! $ :: :user/log-in $ parse-cirru-edn (option:unwrap-or raw |)
-                do $ println "|Found no storage."
+                  dispatch! $ :: :user/log-in $ decode-map-as (parse-cirru-edn raw) (:: 'List 'String)
+                  , &unit
+              (:none)
+                do (println "|Found no storage.") &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.client
           :require
@@ -124,11 +139,11 @@
             ws-edn.client :refer $ ws-connect! ws-send!
             recollect.patch :refer $ patch-twig
             cumulo-util.core :refer $ on-page-touch
-            |url-parse :default url-parse
             |bottom-tip :default hud!
             |./calcit.build-errors :default client-errors
             |../js-out/calcit.build-errors :default server-errors
             js-ffi.browser :refer $ storage-get
+            [] js-ffi.shared :as shared
     'app.comp.container $ %{} 'FileEntry
       :defs $ {}
         'comp-container $ %{} 'CodeEntry (:doc |)
@@ -735,6 +750,11 @@
             :title $ :: 'Option 'String
           :examples $ []
           :schema $ :: 'StructDef
+        'ServerEvent $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum ServerEvent
+            :patch $ :: 'List 'recollect.schema/change-op
+          :examples $ []
+          :schema $ :: 'Enum
         'Session $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Session (:id 'String)
             :user-id $ :: 'Option 'String
@@ -775,6 +795,14 @@
               :snippets $ do snippet $ {}
           :examples $ []
           :schema $ :: 'Dynamic
+        'decode-server-event $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-server-event (raw)
+            match raw $
+              :patch changes
+              %:: ServerEvent :patch $ recollect.schema/decode-changes changes
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ServerEvent)
+            :args $ [] 'Dynamic
         'decode-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-sessions (raw)
             filter-map-kv
