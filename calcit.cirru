@@ -1136,12 +1136,16 @@
         '*initial-db $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *initial-db
             schema/decode-database $ if
-              path-exists? $ w-log storage-file
+              path-exists? $ dbg storage-file
               do (println "|Found local EDN data")
                 parse-cirru-edn $ read-file storage-file
               do (println "|Found no data") schema/database
           :examples $ []
           :schema $ :: 'Ref 'app.schema/Database
+        '*pending-stores $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defatom *pending-stores ({})
+          :examples $ []
+          :schema $ :: 'Ref $ :: 'Map 'Number (:: 'Map 'Tag 'Dynamic)
         '*reader-reel $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defatom *reader-reel @*reel
           :examples $ []
@@ -1168,6 +1172,39 @@
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ [] 'Dynamic 'Number
             :features $ #{} :js-ffi
+        'flush-pending! $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn flush-pending! ()
+            foldl (map-entries @*pending-stores) &unit $ fn (_unit entry)
+              let
+                  sid $ :key entry
+                  new-store $ :value entry
+                  old-store $ match (get @*client-caches sid)
+                    (:none) nil
+                    (:some cached) cached
+                  changes $ diff-twig old-store new-store $ {} (:key :id)
+                if (empty? changes)
+                  reset! *pending-stores $ dissoc @*pending-stores sid
+                  match
+                    wss-send! sid $ format-cirru-edn $ :: :patch changes
+                    (:accepted)
+                      do
+                        reset! *client-caches $ assoc @*client-caches sid new-store
+                        reset! *pending-stores $ dissoc @*pending-stores sid
+                    (:backpressured) &unit
+                    (:closed)
+                      do
+                        reset! *client-caches $ dissoc @*client-caches sid
+                        reset! *pending-stores $ dissoc @*pending-stores sid
+                    (:too-large)
+                      do
+                        eprintln "|Patch exceeds WebSocket message limit for client:" sid
+                        reset! *pending-stores $ dissoc @*pending-stores sid
+                , &unit
+            , &unit
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -1183,19 +1220,29 @@
             println "|Running mode:" $ if config/dev? |dev |release
             let
                 p? $ get-env |port
-                port $ option:unwrap-or (option:map p? parse-float) (:port config/site)
+                port $ match p?
+                  (:none) (:port config/site)
+                  (:some raw)
+                    match (parse-float raw)
+                      (:ok number) number
+                      (:err problem)
+                        raise $ str |Invalid-port: problem
               run-server! port
               println $ str "|Server started on port:" port
             do (; "|init it before doing multi-threading") (identity @*reader-reel)
-            set-interval 200 $ fn () $ render-loop!
-            set-interval 600000 $ fn () $ persist-db!
+            set-interval! 200 $ fn () $ render-loop!
+            set-interval! 600000 $ fn () $ persist-db!
             on-control-c on-exit!
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'on-exit! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn on-exit! () (persist-db!) (; println "|exit code is...") (quit! 0)
+          :code $ quote $ defn on-exit! () (persist-db!) (quit! 0)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'persist-db! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-db! ()
             let
@@ -1213,23 +1260,36 @@
             :features $ #{} :js-ffi
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println "|Code updated.")
-            if (not config/dev?) (raise "|reloading only happens in dev mode")
+            when (not config/dev?) (raise "|reloading only happens in dev mode")
             clear-twig-caches!
-            reset! *reel $ refresh-reel @*reel @*initial-db updater
+            reset! *reel $ refresh-reel @*reel @*initial-db $ fn (db op sid id time)
+              hint-fn $ {} (:return 'app.schema/Database)
+                :args $ [] 'app.schema/Database 'Dynamic 'Dynamic 'Dynamic 'Dynamic
+              updater db (decode-map-as op 'app.schema/ServerOp) (decode-map-as sid 'Number) (decode-map-as id 'String) (decode-map-as time 'Number)
+            reset! *reader-reel @*reel
             sync-clients! @*reader-reel
+            flush-pending!
+            , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-loop! ()
             when
               not $ identical? @*reader-reel @*reel
               reset! *reader-reel @*reel
               sync-clients! @*reader-reel
+            flush-pending!
+            , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ []
+            :features $ #{} :js-ffi
         'run-server! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn run-server! (port)
-            wss-serve! (&{} :port port)
+            wss-serve!
+              {} $ :port port
               fn (data)
                 match data
                   (:connect sid)
@@ -1237,15 +1297,19 @@
                       dispatch! (:: :session/connect) sid
                       println "|New client."
                   (:message sid msg)
-                    let
-                        action $ parse-cirru-edn msg
-                      dispatch! action sid
+                    dispatch! (parse-cirru-edn msg) sid
                   (:disconnect sid)
-                    do (println "|Client closed!")
+                    do
                       dispatch! (:: :session/disconnect) sid
-                  _ $ println "|unknown data:" data
+                      reset! *client-caches $ dissoc @*client-caches sid
+                      reset! *pending-stores $ dissoc @*pending-stores sid
+                      println "|Client closed!"
+                  (:blob _sid _buffer) (println "|Ignoring binary message.")
+                , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'calcit.core/FfiTask)
+            :args $ [] 'Number
+            :features $ #{} :js-ffi
         'storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def storage-file
             if (empty? calcit-dirname)
@@ -1255,24 +1319,13 @@
           :schema $ :: 'String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sync-clients! (reel)
-            wss-each! $ fn (sid)
-              match
-                get
-                  :sessions $ :db reel
-                  , sid
-                (:none) &unit
-                (:some session)
-                  let
-                      old-store $ match (get @*client-caches sid)
-                        (:none) nil
-                        (:some cached) cached
-                      new-store $ twig-container (:db reel) session $ :records reel
-                      changes $ diff-twig old-store new-store $ {} (:key :id)
-                    when
-                      not $ empty? changes
-                      wss-send! sid $ format-cirru-edn $ :: :patch changes
-                      reset! *client-caches $ assoc @*client-caches sid new-store
-                    , &unit
+            foldl
+              map-entries $ :sessions $ :db reel
+              , &unit $ fn (_unit entry)
+                let
+                    store $ twig-container (:db reel) (:value entry) (:records reel)
+                  reset! *pending-stores $ assoc @*pending-stores (:key entry) store
+                  , &unit
             , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
@@ -1290,9 +1343,9 @@
             recollect.twig :refer $ clear-twig-caches!
             app.$meta :refer $ calcit-dirname
             calcit.std.fs :refer $ path-exists? check-write-file!
-            calcit.std.time :refer $ set-interval
             calcit.std.date :refer $ Date get-time! get-timestamp extract-time
             calcit.std.path :refer $ join-path
+            [] calcit.std.time :refer $ [] set-interval!
     'app.style $ %{} 'FileEntry
       :defs $ {}
         'button $ %{} 'CodeEntry (:doc |)
