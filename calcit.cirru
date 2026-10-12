@@ -773,6 +773,10 @@
             :authenticated 'app.schema/UserView 'app.schema/ClientRoute (:: 'Map 'String 'app.schema/Snippet) 'Number 'String
           :examples $ []
           :schema $ :: 'Enum
+        'Credentials $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defstruct Credentials (:username 'String) (:password 'String)
+          :examples $ []
+          :schema $ :: 'StructDef
         'Database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct Database
             :sessions $ :: 'Map 'Number 'app.schema/Session
@@ -801,6 +805,10 @@
         'ServerEvent $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defenum ServerEvent
             :patch $ :: 'List 'recollect.schema/change-op
+          :examples $ []
+          :schema $ :: 'Enum
+        'ServerOp $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defenum ServerOp (:session/connect) (:session/disconnect) (:session/remove-message 'String) (:user/log-in 'app.schema/Credentials) (:user/sign-up 'app.schema/Credentials) (:user/log-out 'Nil) (:router/change 'app.schema/RouteRequest) (:snippet/create 'app.schema/SnippetDraft) (:snippet/update 'app.schema/Snippet) (:snippet/remove 'String) (:snippet/count-usage 'String) (:reel/reset) (:reel/merge) (:effect/persist) (:unknown 'Dynamic)
           :examples $ []
           :schema $ :: 'Enum
         'Session $ %{} 'CodeEntry (:doc |)
@@ -894,6 +902,17 @@
           :schema $ :: 'Fn $ {}
             :args $ [] 'Dynamic
             :return $ :: 'Option 'app.schema/ClientStore
+        'decode-credentials $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-credentials (raw)
+            let
+                fields $ decode-map-as raw $ :: 'List 'String
+              assert= 2 $ count fields
+              %{} Credentials
+                :username $ option:unwrap $ get fields 0
+                :password $ option:unwrap $ get fields 1
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Credentials)
+            :args $ [] 'Dynamic
         'decode-database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-database (raw)
             let
@@ -914,6 +933,44 @@
               %:: ServerEvent :patch $ recollect.schema/decode-changes changes
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ServerEvent)
+            :args $ [] 'Dynamic
+        'decode-server-op $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn decode-server-op (raw)
+            match raw
+              (:session/connect) (%:: ServerOp :session/connect)
+              (:session/disconnect) (%:: ServerOp :session/disconnect)
+              (:session/remove-message info)
+                %:: ServerOp :session/remove-message $ decode-map-as
+                  &map:get
+                    decode-map-as info $ :: 'Map 'Tag 'Dynamic
+                    , :id
+                  , 'String
+              (:user/log-in fields)
+                %:: ServerOp :user/log-in $ decode-credentials fields
+              (:user/sign-up fields)
+                %:: ServerOp :user/sign-up $ decode-credentials fields
+              (:user/log-out data)
+                %:: ServerOp :user/log-out $ decode-map-as data 'Nil
+              (:router/change data)
+                %:: ServerOp :router/change $ decode-map-as
+                  without-nil-fields
+                    decode-map-as data $ :: 'Map 'Tag 'Dynamic
+                    [] :data :router :title
+                  , 'app.schema/RouteRequest
+              (:snippet/create data)
+                %:: ServerOp :snippet/create $ decode-map-as data 'app.schema/SnippetDraft
+              (:snippet/update data)
+                %:: ServerOp :snippet/update $ decode-map-as data 'app.schema/Snippet
+              (:snippet/remove id)
+                %:: ServerOp :snippet/remove $ decode-map-as id 'String
+              (:snippet/count-usage id)
+                %:: ServerOp :snippet/count-usage $ decode-map-as id 'String
+              (:reel/reset) (%:: ServerOp :reel/reset)
+              (:reel/merge) (%:: ServerOp :reel/merge)
+              (:effect/persist) (%:: ServerOp :effect/persist)
+              _ $ %:: ServerOp :unknown raw
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/ServerOp)
             :args $ [] 'Dynamic
         'decode-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-sessions (raw)
@@ -1097,16 +1154,20 @@
           :examples $ []
           :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState 'app.schema/Database
         'dispatch! $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn dispatch! (op sid)
+          :code $ quote $ defn dispatch! (raw sid)
             let
+                op $ schema/decode-server-op raw
                 op-id $ generate-id!
-                op-time $ -> (get-time!) (get-timestamp)
-              if config/dev? $ println |Dispatch! (str op) sid
+                op-time $ get-timestamp $ get-time!
+              when config/dev? $ println |Dispatch! op sid
               match op
                 (:effect/persist) (persist-db!)
                 _ $ reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
+              , &unit
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'Unit)
+            :args $ [] 'Dynamic 'Number
+            :features $ #{} :js-ffi
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -1352,7 +1413,9 @@
               (:snippet/count-usage op-data) (snippet/count-usage db op-data sid op-id op-time)
               _ $ do (eprintln "|Unknown op:" op) db
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/ServerOp 'Number 'String 'Number
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require ([] app.updater.session :as session) ([] app.updater.user :as user) ([] app.updater.router :as router) ([] app.updater.snippet :as snippet) ([] app.schema :as schema)
@@ -1360,127 +1423,175 @@
     'app.updater.router $ %{} 'FileEntry
       :defs $ {} $ 'change
         %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn change (db op-data sid op-id op-time)
-            assoc-in db ([] :sessions sid :router) op-data
+          :code $ quote $ defn change (db route sid op-id op-time)
+            match
+              get (:sessions db) sid
+              (:none) db
+              (:some session)
+                struct-with db $ :sessions $ assoc (:sessions db) sid
+                  struct-with session $ :router route
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/RouteRequest 'Number 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.router
     'app.updater.session $ %{} 'FileEntry
       :defs $ {}
         'connect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn connect (db sid op-id op-time)
-            assoc-in db ([] :sessions sid)
-              merge schema/session $ {} $ :id sid
+            let
+                session $ %{} app.schema/Session (:id sid)
+                  :user-id $ Option :none
+                  :nickname $ Option :none
+                  :router $ %{} app.schema/RouteRequest (:name :home)
+                    :data $ Option :none
+                    :router $ Option :none
+                    :title $ Option :none
+                  :messages $ {}
+              struct-with db $ :sessions $ assoc (:sessions db) sid session
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'Number 'String 'Number
         'disconnect $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn disconnect (db sid op-id op-time)
-            update db :sessions $ fn (session) (dissoc session sid)
+            struct-with db $ :sessions $ dissoc (:sessions db) sid
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'Number 'String 'Number
         'remove-message $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn remove-message (db op-data sid op-id op-time)
-            update-in db ([] :sessions sid :messages)
-              fn (messages)
-                dissoc (option:unwrap-or messages {}) (&map:get op-data :id)
+          :code $ quote $ defn remove-message (db id sid op-id op-time)
+            match
+              get (:sessions db) sid
+              (:none) db
+              (:some session)
+                struct-with db $ :sessions $ assoc (:sessions db) sid
+                  struct-with session $ :messages $ dissoc (:messages session) id
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'String 'Number 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.session
           :require $ [] app.schema :as schema
     'app.updater.snippet $ %{} 'FileEntry
       :defs $ {}
         'count-usage $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn count-usage (db op-data sid op-id op-time)
-            update-in db ([] :snippets op-data)
-              fn (snippet)
-                update (option:unwrap-or snippet {}) :copied-times inc
+          :code $ quote $ defn count-usage (db id sid op-id op-time)
+            match
+              get (:snippets db) id
+              (:none) db
+              (:some snippet)
+                struct-with db $ :snippets $ assoc (:snippets db) id
+                  struct-with snippet $ :copied-times $ inc (:copied-times snippet)
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'String 'Number 'String 'Number
         'create-one $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn create-one (db op-data sid op-id op-time)
-            assoc-in db ([] :snippets op-id)
-              merge schema/snippet op-data $ {} (:id op-id) (:edited-at op-time)
+          :code $ quote $ defn create-one (db draft sid op-id op-time)
+            struct-with db $ :snippets $ assoc (:snippets db) op-id
+              %{} app.schema/Snippet (:id op-id)
+                :title $ :title draft
+                :content $ :content draft
+                :edited-at op-time
+                :copied-times 0
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/SnippetDraft 'Number 'String 'Number
         'remove-one $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn remove-one (db op-data sid op-id op-time)
-            update db :snippets $ \ dissoc % op-data
+          :code $ quote $ defn remove-one (db id sid op-id op-time)
+            struct-with db $ :snippets $ dissoc (:snippets db) id
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'String 'Number 'String 'Number
         'update-one $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn update-one (db op-data sid op-id op-time)
-            update-in db
-              [] :snippets $ &map:get op-data :id
-              fn (snippet)
-                -> (option:unwrap-or snippet schema/snippet) (merge op-data) (assoc :edited-at op-time)
+          :code $ quote $ defn update-one (db snippet sid op-id op-time)
+            struct-with db $ :snippets $ assoc (:snippets db) (:id snippet)
+              struct-with snippet $ :edited-at op-time
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/Snippet 'Number 'String 'Number
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.snippet
           :require $ [] app.schema :as schema
     'app.updater.user $ %{} 'FileEntry
       :defs $ {}
-        'as-user-map $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn as-user-map (user) (unsafe-coerce user 'Map)
-          :examples $ []
-          :schema $ :: 'Fn $ {} (:return 'Map)
-            :args $ [] 'Dynamic
         'log-in $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn log-in (db op-data sid op-id op-time)
-            let-sugar
-                  [] username password
-                  , op-data
-                maybe-user $ -> (&map:get db :users) (vals) (.to-list)
-                  find $ fn (user)
-                    and $ = username $ &map:get (as-user-map user) :name
-              update-in db ([] :sessions sid)
-                fn (session)
-                  if (option:some? maybe-user)
-                    if
-                      = (md5 password)
-                        &map:get
-                          as-user-map $ option:unwrap maybe-user
-                          , :password
-                      assoc (option:unwrap-or session {}) :user-id $ &map:get
-                        as-user-map $ option:unwrap maybe-user
-                        , :id
-                      update (option:unwrap-or session {}) :messages $ fn (messages)
-                        assoc messages op-id $ {} (:id op-id)
-                          :text $ str "|Wrong password for " username
-                    update (option:unwrap-or session {}) :messages $ fn (messages)
-                      assoc messages op-id $ {} (:id op-id)
-                        :text $ str "|No user named: " username
+          :code $ quote $ defn log-in (db credentials sid op-id op-time)
+            match
+              get (:sessions db) sid
+              (:none) db
+              (:some session)
+                let
+                    maybe-user $ find
+                      map-entries $ :users db
+                      fn (entry)
+                        = (:username credentials)
+                          :name $ :value entry
+                    next-session $ match maybe-user
+                      (:none)
+                        notify session op-id $ str "|No user named: " $ :username credentials
+                      (:some entry)
+                        let
+                            user $ :value entry
+                          if
+                            =
+                              md5 $ :password credentials
+                              :password user
+                            struct-with session $ :user-id $ Option :some (:id user)
+                            notify session op-id $ str "|Wrong password for " $ :username credentials
+                  struct-with db $ :sessions $ assoc (:sessions db) sid next-session
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/Credentials 'Number 'String 'Number
+            :features $ #{} :js-ffi
         'log-out $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn log-out (db op-data sid op-id op-time)
-            assoc-in db ([] :sessions sid :user-id) nil
+            match
+              get (:sessions db) sid
+              (:none) db
+              (:some session)
+                struct-with db $ :sessions $ assoc (:sessions db) sid
+                  struct-with session $ :user-id $ Option :none
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'Nil 'Number 'String 'Number
+        'notify $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn notify (session id text)
+            struct-with session $ :messages $ assoc (:messages session) id
+              %{} app.schema/Message (:id id) (:text text)
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Session)
+            :args $ [] 'app.schema/Session 'String 'String
         'sign-up $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn sign-up (db op-data sid op-id op-time)
-            let-sugar
-                  [] username password
-                  , op-data
-                maybe-user $ find
-                  -> (&map:get db :users) vals .to-list
-                  fn (user)
-                    = username $ &map:get (as-user-map user) :name
-              if (option:some? maybe-user)
-                update-in db ([] :sessions sid :messages)
-                  fn (messages)
-                    assoc (option:unwrap-or messages {}) op-id $ {} (:id op-id)
-                      :text $ str "|Name is taken: " username
-                -> db
-                  assoc-in ([] :sessions sid :user-id) op-id
-                  assoc-in ([] :users op-id)
-                    {} (:id op-id) (:name username) (:nickname username)
-                      :password $ md5 password
-                      :avatar nil
+          :code $ quote $ defn sign-up (db credentials sid op-id op-time)
+            match
+              get (:sessions db) sid
+              (:none) db
+              (:some session)
+                let
+                    maybe-user $ find
+                      map-entries $ :users db
+                      fn (entry)
+                        = (:username credentials)
+                          :name $ :value entry
+                  match maybe-user
+                    (:some _entry)
+                      struct-with db $ :sessions $ assoc (:sessions db) sid
+                        notify session op-id $ str "|Name is taken: " $ :username credentials
+                    (:none)
+                      let
+                          user $ %{} app.schema/User (:id op-id)
+                            :name $ :username credentials
+                            :password $ md5 $ :password credentials
+                            :nickname $ Option :some $ :username credentials
+                            :avatar $ Option :none
+                        struct-with db
+                          :users $ assoc (:users db) op-id user
+                          :sessions $ assoc (:sessions db) sid $ struct-with session
+                            :user-id $ Option :some op-id
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
+            :args $ [] 'app.schema/Database 'app.schema/Credentials 'Number 'String 'Number
+            :features $ #{} :js-ffi
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater.user
           :require $ calcit.std.hash :refer $ md5
