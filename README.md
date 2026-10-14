@@ -51,6 +51,7 @@ import；正常页面不改变。事件输入回调按现有应用合同声明�
 注册失败仍直接传播；发布版配对的服务端检查与 8 项 native 定义测试通过。
 静态已知的 struct/enum 使用直接构造器；宏内两处构造经人工核对并补齐语义测试，
 其余推荐构造和多余 do 由既有 fix preset 受保护改写。应用自身的 require/refer 列表不再加多余 `[]`。
+命名空间 Ref 使用 `defref`；既有迁移规则保留初始化和 reload 行为，应用弃用调用检查为空。
 
 依赖已收敛到正式发布的 Util 0.0.28、Message 0.0.34、Alerts 0.10.52、
 Feather 0.4.26、Respo 0.16.120、UI 0.7.39、JS FFI 0.2.3、Recollect 0.0.60

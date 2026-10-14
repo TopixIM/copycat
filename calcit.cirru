@@ -15,14 +15,14 @@
     'app.client $ %{} 'FileEntry
       :defs $ {}
         '*states $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *states
+          :code $ quote $ defref *states
             {} $ :states $ {}
               :cursor $ []
           :examples $ []
           :schema $ :: 'Ref $ :: 'Map 'Tag 'Dynamic
         '*store $ %{} 'CodeEntry
           :doc "|Raw patch-twig transport cache: its heterogeneous wire values remain Dynamic here; components decode concrete application models before use. Do not store nominal DTOs in the patch base."
-          :code $ quote $ defatom *store nil
+          :code $ quote $ defref *store nil
           :examples $ []
           :schema $ :: 'Ref 'Dynamic
         'connect! $ %{} 'CodeEntry (:doc |)
@@ -1108,11 +1108,11 @@
     'app.server $ %{} 'FileEntry
       :defs $ {}
         '*client-caches $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *client-caches ({})
+          :code $ quote $ defref *client-caches ({})
           :examples $ []
           :schema $ :: 'Ref $ :: 'Map 'Number (:: 'Map 'Tag 'Dynamic)
         '*initial-db $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *initial-db
+          :code $ quote $ defref *initial-db
             schema/decode-database $ if
               path-exists? $ dbg storage-file
               do (println "|Found local EDN data")
@@ -1121,15 +1121,15 @@
           :examples $ []
           :schema $ :: 'Ref 'app.schema/Database
         '*pending-stores $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *pending-stores ({})
+          :code $ quote $ defref *pending-stores ({})
           :examples $ []
           :schema $ :: 'Ref $ :: 'Map 'Number (:: 'Map 'Tag 'Dynamic)
         '*reader-reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reader-reel @*reel
+          :code $ quote $ defref *reader-reel @*reel
           :examples $ []
           :schema $ :: 'Ref $ :: 'cumulo-reel.core/ReelState 'app.schema/Database
         '*reel $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defatom *reel
+          :code $ quote $ defref *reel
             %{} cumulo-reel.core/ReelState (:base @*initial-db) (:db @*initial-db)
               :records $ []
               :merged? false
