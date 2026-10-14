@@ -263,34 +263,7 @@
             [] app.schema :as schema
             [] app.config :as config
             [] app.comp.editor :refer $ [] comp-editor
-            [] app.comp.empty :refer $ [] comp-empty
             [] app.comp.list :refer $ [] comp-list
-    'app.comp.dialog $ %{} 'FileEntry
-      :defs $ {} $ 'comp-dialog
-        %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-dialog (on-close! child-node)
-            assert (fn? on-close!) "|on-close! should be a function"
-            div
-              {}
-                :style $ merge ui/fullscreen ui/center $ {} (:position :absolute) (:width |100%) (:height |100%)
-                  :background-color $ hsl 0 0 0 0.4
-                  :z-index 100
-                :on-click $ fn (e d! m!) (on-close! m!)
-              div
-                {}
-                  :style $ {} (:padding 16) (:background-color :white)
-                  :on-click $ fn $ e d! m!
-                , child-node
-          :examples $ []
-          :schema $ :: 'Dynamic
-      :ns $ %{} 'NsEntry (:doc |)
-        :code $ quote $ ns app.comp.dialog
-          :require
-            [] hsl.core :refer $ [] hsl
-            [] respo-ui.core :as ui
-            [] respo-ui.colors :as colors
-            [] respo.core :refer $ [] defcomp <> action-> span div
-            [] respo.comp.space :refer $ [] =<
     'app.comp.editor $ %{} 'FileEntry
       :defs $ {} $ 'comp-editor
         %{} 'CodeEntry (:doc |)
@@ -314,6 +287,10 @@
                       :value $ :title state
                       :placeholder |Title
                       :on-input $ fn (e d!)
+                        hint-fn $ {} (:return 'Unit)
+                          :args $ [] (:: 'Map 'Tag 'Dynamic)
+                            :: 'Fn $ {} (:return 'Unit)
+                              :args $ [] 'Enum
                         d! $ :: :states cursor $ {}
                           :title $ decode-map-as (&map:get e :value) 'String
                           :content $ :content state
@@ -323,6 +300,10 @@
                     :placeholder |Content
                     :value $ :content state
                     :on-input $ fn (e d!)
+                      hint-fn $ {} (:return 'Unit)
+                        :args $ [] (:: 'Map 'Tag 'Dynamic)
+                          :: 'Fn $ {} (:return 'Unit)
+                            :args $ [] 'Enum
                       d! $ :: :states cursor $ {}
                         :title $ :title state
                         :content $ decode-map-as (&map:get e :value) 'String
@@ -360,26 +341,6 @@
             [] respo.core :refer $ [] defcomp cursor-> <> div button span textarea input
             [] respo.comp.space :refer $ [] =<
             [] app.style :as style
-    'app.comp.empty $ %{} 'FileEntry
-      :defs $ {} $ 'comp-empty
-        %{} 'CodeEntry (:doc |)
-          :code $ quote $ defcomp comp-empty (router)
-            div
-              {} $ :style $ {} (:padding 8)
-                :color $ hsl 0 0 70
-                :font-family "|Josefin Sans"
-                :font-weight 300
-                :font-size 32
-              <> $ str "|Missing page: " $ pr-str router
-          :examples $ []
-          :schema $ :: 'Dynamic
-      :ns $ %{} 'NsEntry (:doc |)
-        :code $ quote $ ns app.comp.empty
-          :require
-            [] hsl.core :refer $ [] hsl
-            [] respo-ui.core :as ui
-            [] respo.core :refer $ [] defcomp cursor-> <> div button span
-            [] respo.comp.space :refer $ [] =<
     'app.comp.list $ %{} 'FileEntry
       :defs $ {}
         'CardState $ %{} 'CodeEntry (:doc |)
@@ -562,6 +523,10 @@
                         :value $ :username state
                         :style ui/input
                         :on-input $ fn (e d!)
+                          hint-fn $ {} (:return 'Unit)
+                            :args $ [] (:: 'Map 'Tag 'Dynamic)
+                              :: 'Fn $ {} (:return 'Unit)
+                                :args $ [] 'Enum
                           d! $ :: :states cursor $ {}
                             :username $ decode-map-as (&map:get e :value) 'String
                             :password $ :password state
@@ -571,6 +536,10 @@
                         :value $ :password state
                         :style ui/input
                         :on-input $ fn (e d!)
+                          hint-fn $ {} (:return 'Unit)
+                            :args $ [] (:: 'Map 'Tag 'Dynamic)
+                              :: 'Fn $ {} (:return 'Unit)
+                                :args $ [] 'Enum
                           d! $ :: :states cursor $ {}
                             :username $ :username state
                             :password $ decode-map-as (&map:get e :value) 'String
@@ -594,6 +563,11 @@
         'on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-submit (username password signup?)
             fn (e dispatch!)
+              hint-fn $ {} (:return 'Unit)
+                :args $ [] (:: 'Map 'Tag 'Dynamic)
+                  :: 'Fn $ {} (:return 'Unit)
+                    :args $ [] 'Enum
+                :features $ #{} :js-ffi
               dispatch! $ if signup?
                 :: :user/sign-up $ [] username password
                 :: :user/log-in $ [] username password
@@ -645,6 +619,10 @@
                   :value query
                   :placeholder |Filter...
                   :on-input $ fn (e d!)
+                    hint-fn $ {} (:return 'Unit)
+                      :args $ [] (:: 'Map 'Tag 'Dynamic)
+                        :: 'Fn $ {} (:return 'Unit)
+                          :args $ [] 'Enum
                     d! $ :: :states parent-cursor $ {}
                       :query $ decode-map-as (&map:get e :value) 'String
               div
@@ -1538,6 +1516,26 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
             :args $ [] 'app.schema/Database 'String 'Number 'String 'Number
+          :tests $ []
+            %{} 'TestEntry
+              :name |increments-count-without-changing-content-or-edit-time
+              :code $ quote $ let
+                  snippet-a $ app.schema/Snippet :id |a :title "|第一条" :content "|正文🐈" :edited-at 7 :copied-times 0
+                  snippet-b $ app.schema/Snippet :id |b :title "|第二条" :content "|保留" :edited-at 8 :copied-times 3
+                  db $ app.schema/Database :sessions ({}) :users ({}) :snippets $ {} (|a snippet-a) (|b snippet-b)
+                assert=
+                  struct-with db $ :snippets $ {}
+                    |a $ struct-with snippet-a $ :copied-times 1
+                    |b snippet-b
+                  count-usage db |a 42 |op 99
+              :tags $ #{} :snippet :unit
+            %{} 'TestEntry (:name |missing-snippet-keeps-database)
+              :code $ quote $ let
+                  snippet-a $ app.schema/Snippet :id |a :title "|第一条" :content "|正文🐈" :edited-at 7 :copied-times 0
+                  snippet-b $ app.schema/Snippet :id |b :title "|第二条" :content "|保留" :edited-at 8 :copied-times 3
+                  db $ app.schema/Database :sessions ({}) :users ({}) :snippets $ {} (|a snippet-a) (|b snippet-b)
+                assert= db $ count-usage db |missing 42 |op 99
+              :tags $ #{} :snippet :unit
         'create-one $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn create-one (db draft sid op-id op-time)
             struct-with db $ :snippets $ assoc (:snippets db) op-id
@@ -1555,6 +1553,23 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
             :args $ [] 'app.schema/Database 'String 'Number 'String 'Number
+          :tests $ []
+            %{} 'TestEntry (:name |removes-only-target-snippet)
+              :code $ quote $ let
+                  snippet-a $ app.schema/Snippet :id |a :title "|第一条" :content "|正文🐈" :edited-at 7 :copied-times 0
+                  snippet-b $ app.schema/Snippet :id |b :title "|第二条" :content "|保留" :edited-at 8 :copied-times 3
+                  db $ app.schema/Database :sessions ({}) :users ({}) :snippets $ {} (|a snippet-a) (|b snippet-b)
+                assert=
+                  struct-with db $ :snippets $ {} (|b snippet-b)
+                  remove-one db |a 42 |op 99
+              :tags $ #{} :snippet :unit
+            %{} 'TestEntry (:name |missing-snippet-keeps-database)
+              :code $ quote $ let
+                  snippet-a $ app.schema/Snippet :id |a :title "|第一条" :content "|正文🐈" :edited-at 7 :copied-times 0
+                  snippet-b $ app.schema/Snippet :id |b :title "|第二条" :content "|保留" :edited-at 8 :copied-times 3
+                  db $ app.schema/Database :sessions ({}) :users ({}) :snippets $ {} (|a snippet-a) (|b snippet-b)
+                assert= db $ remove-one db |missing 42 |op 99
+              :tags $ #{} :snippet :unit
         'update-one $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn update-one (db snippet sid op-id op-time)
             struct-with db $ :snippets $ assoc (:snippets db) (:id snippet)

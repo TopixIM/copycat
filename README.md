@@ -2,7 +2,7 @@
 CopyCat
 ----
 
-Tool for copying frequently used snippets.
+用于保存和复制常用代码片段的应用。
 
 Demo http://copycat.topix.im/
 
@@ -10,8 +10,9 @@ Demo http://copycat.topix.im/
 
 Workflow https://github.com/Cumulo/cumulo-workflow.calcit/ .
 
-Use stable Calcit 0.29.0, Caps 0.1.1, Node.js 24 and Yarn 4.12.0.
-`calcit.cirru` contains source and entries; `deps.cirru` pins dependencies.
+当前迁移候选使用正式 Calcit / `@calcit/procs` 0.29.3、Caps 0.1.1、Node.js 24
+和 Yarn 4.12.0。`calcit.cirru` 保存源码与入口，`deps.cirru` 固定依赖。
+原严格依赖门槛保留，完整迁移尚未验收：
 
 ```sh
 caps --strict --ci
@@ -19,6 +20,7 @@ yarn install --immutable
 caps verify --toolchain
 yarn check-client
 yarn check-server
+calcit calcit.cirru test --require-match --summary-only
 yarn compile-page
 yarn release-page
 ```
@@ -33,6 +35,20 @@ Frontend assets use `https://cos-sh.tiye.me/TopixIM/copycat/` on main and an
 isolated `TopixIM/copycat/pr/<number>/` prefix on PRs. The frontend HTML deployment
 remains `/web-assets/repo/TopixIM/copycat`. Local builds default to relative assets;
 set `VITE_BASE_URL` to override the asset base.
+
+### 迁移验证与限制
+
+已清理没有源码、测试、示例或文档使用的旧 dialog 和 missing-page 组件及其遗留
+import；正常页面不改变。事件输入回调按现有应用合同声明事件 Map 与 Enum dispatch，
+事件字段仍在使用处校验，不新增 Dynamic 放宽或业务默认值。
+
+4 项定义内 `:tests` 在 native / 生成 JS 各通过 4/4，覆盖仅删除目标片段、缺失 ID
+保持数据库、复制次数递增及 Unicode 内容与编辑时间保持不变。双入口检查、JS 生成
+和本地页面构建通过；这些结果不等于完整 strict 或真实浏览器业务验收。
+
+- `caps --strict --ci` 因上游模块请求不同的 Respo / UI / JS FFI 版本而拒绝；未删除或放宽该门槛。
+- 完整 strict 仍需核对 Ref watcher 回调的泛型证明与服务端 Unit 返回。
+- UI / native 宿主回放及依赖兼容验收尚未完成，不能据局部测试接受 0.30.0 退场。
 
 ### License
 
