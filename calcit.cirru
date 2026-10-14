@@ -1211,6 +1211,7 @@
             set-interval! 200 $ fn () $ render-loop!
             set-interval! 600000 $ fn () $ persist-db!
             on-control-c on-exit!
+            , &unit
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
             :args $ []
