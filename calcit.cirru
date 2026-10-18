@@ -391,6 +391,12 @@
                     {}
                       :style $ {} $ :color :red
                       :on-click $ fn (e d!)
+                        hint-fn $ {}
+                          :args $ [] (:: 'Map 'Tag 'Dynamic)
+                            :: 'Fn $ {}
+                              :args $ [] 'Enum
+                              :return 'Unit
+                          :return 'Unit
                         .show remove-plugin d! $ fn ()
                           d! $ :: :snippet/remove $ :id snippet
                           , &unit
