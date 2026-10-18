@@ -40,6 +40,7 @@ set `VITE_BASE_URL` to override the asset base.
 ### 当前 0.30.1 迁移状态
 
 已对齐正式 Cumulo Reel 0.0.57 / WS-EDN 0.0.42 依赖图，版本以 `deps.cirru` 为准。
+Confirm 上游合同修复已发布为正式 Alerts 0.10.56，本应用固定该 tag，并在实际事件入口声明单 Enum dispatch 合同。
 旧存档的可空字段适配器已直接匹配 Option，运行验证保留 false、0、空字符串、未知字段和缺失字段；
 应用剩余 33 处旧 Map 读取已迁移为 Option：状态初值显式区分缺失和 nil，
 线协议和事件字段继续交给原 decoder，缺失字段保持原解码错误，不凭空添加业务默认值。
@@ -59,7 +60,8 @@ set `VITE_BASE_URL` to override the asset base.
 并在保存和重启后恢复内容、复制计数及自动登录；没有使用生产数据。
 真实浏览器删除操作暴露旧的双参数 cursor/data 回调：Alerts `.show` 现在调用单参数 Enum dispatch。
 已直接传入现有 `d!`，弹窗打开与经授权的合成片段确认删除通过；上游裸 Fn 合同漏检已报告
-[Alerts #102](https://github.com/Respo/alerts.calcit/issues/102)。不另加兼容包装或强转。
+[Alerts #102](https://github.com/Respo/alerts.calcit/issues/102)，其正式 tag 的双目标检查、完整 strict 和原生测试已重验。
+不另加兼容包装或强转；业务应用仍未合并或部署。
 复制计数和提示已验证，但当前内置浏览器的虚拟剪贴板未捕获旧式复制，粘贴也明确报虚拟剪贴板为空；
 实际剪贴板内容尚未验证，不能以 “Copied” 提示代替，也不能据此断定应用复制失败。
 这次运行使用已存在的精确依赖源码/native 产物；干净环境的严格 Caps/toolchain 仍须由 CI 验收。
