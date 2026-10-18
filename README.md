@@ -10,7 +10,7 @@ Demo http://copycat.topix.im/
 
 Workflow https://github.com/Cumulo/cumulo-workflow.calcit/ .
 
-当前迁移候选使用已发布的 Calcit / `@calcit/procs` 0.30.0-alpha.3、Caps 0.1.1、Node.js 24
+当前迁移候选使用已发布的 Calcit / `@calcit/procs` 0.30.1-alpha.4（预发布）、Caps 0.1.1、Node.js 24
 和 Yarn 4.12.0。`calcit.cirru` 保存源码与入口，`deps.cirru` 固定依赖。
 原严格依赖门槛保留，完整迁移尚未验收：
 
@@ -37,7 +37,15 @@ isolated `TopixIM/copycat/pr/<number>/` prefix on PRs. The frontend HTML deploym
 remains `/web-assets/repo/TopixIM/copycat`. Local builds default to relative assets;
 set `VITE_BASE_URL` to override the asset base.
 
-### 迁移验证与限制
+### 当前 0.30.1 迁移状态
+
+已对齐正式 Cumulo Reel 0.0.57 / WS-EDN 0.0.42 依赖图，版本以 `deps.cirru` 为准。
+旧存档的可空字段适配器已直接匹配 Option，运行验证保留 false、0、空字符串、未知字段和缺失字段；
+原 8 项 native 定义测试通过。仍有 33 处旧 Map 读取未迁移，双入口门禁尚未通过，
+前端/native 网络与浏览器流程待重验，不能将下面的历史结果当作本轮完成证明。
+生产服务仍须准备匹配的 CLI/native 依赖，保留原部署路径，不因前端 COS 通过而直接部署后端。
+
+### 迁移验证与限制（上一轮 alpha.3 历史）
 
 已清理没有源码、测试、示例或文档使用的旧 dialog 和 missing-page 组件及其遗留
 import；正常页面不改变。事件输入回调按现有应用合同声明事件 Map 与 Enum dispatch，

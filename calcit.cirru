@@ -1095,10 +1095,10 @@
           :doc "|Legacy wire/storage adapter only: remove named nil optional fields before typed decoding. Do not change persisted or transmitted Map representations."
           :code $ quote $ defn without-nil-fields (raw fields)
             foldl fields raw $ fn (result field)
-              if
-                nil? $ &map:get result field
-                dissoc result field
-                , result
+              match (get result field)
+                (:some value)
+                  if (nil? value) (dissoc result field) result
+                (:none) result
           :examples $ []
           :schema $ :: 'Fn $ {}
             :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'List 'Tag)
