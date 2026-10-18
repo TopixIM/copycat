@@ -724,7 +724,7 @@
           :code $ quote $ def dev?
             = |dev $ option:unwrap-or (get-env |mode) |release
           :examples $ []
-          :schema $ :: 'Dynamic
+          :schema $ :: 'Bool
         'site $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def site
             app.schema/SiteConfig :storage-key |copycat :storage-file |copycat.cirru :port 11012 :title |Copycat :icon |http://cdn.tiye.me/logo/copycat.png :theme |#eeeeff
@@ -1127,8 +1127,9 @@
                 (:none) result
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] (:: 'Map 'Tag 'Dynamic) (:: 'List 'Tag)
-            :return $ :: 'Map 'Tag 'Dynamic
+            :args $ [] (:: 'Map 'K 'V) (:: 'List 'K)
+            :generics $ [] 'K 'V
+            :return $ :: 'Map 'K 'V
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.schema
     'app.server $ %{} 'FileEntry
@@ -1380,9 +1381,10 @@
           :code $ quote $ defn merge-styles (x0 & xs) (reduce xs x0 &merge)
           :examples $ []
           :schema $ :: 'Fn $ {}
-            :args $ [] $ :: 'Map 'Tag 'Dynamic
-            :rest $ :: 'Map 'Tag 'Dynamic
-            :return $ :: 'Map 'Tag 'Dynamic
+            :args $ [] $ :: 'Map 'Tag 'V
+            :generics $ [] 'V
+            :rest $ :: 'Map 'Tag 'V
+            :return $ :: 'Map 'Tag 'V
         'textarea $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def textarea (merge ui/textarea)
           :examples $ []

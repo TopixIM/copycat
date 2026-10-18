@@ -49,8 +49,12 @@ set `VITE_BASE_URL` to override the asset base.
 原 8 项定义测试在 native 与生成的 JS 各通过 8/8；临时 native/JS 回放验证 false、0、空字符串、
 缺失/nil、空编辑参数和匿名会话解析，不将回放辅助定义或额外校验脚本纳入仓库。
 当前 JS 生成和 Vite 生产构建通过，保留原有 bundle 大小警告。
-格式化仍报告 47 个定义中的 56 处 Dynamic/未绑定类型槽，需继续逐项区分真实异构边界和可收紧合同；
+`dev?` 已明确为 Bool；`without-nil-fields` 保留 Map<K,V> 和字段 List<K> 的关系，
+`merge-styles` 保留输入和输出值类型 V，均不新增断言或强转。
+格式化仍报告 44 个定义中的 50 处 schema Dynamic，需继续逐项区分真实异构边界和可收紧合同；
 完整 strict 通过不等同于这些类型债务已经清零，不放宽基线来掩盖它们。
+旧定义引用盘点发现 `query usages` 会把局部遮蔽绑定误报为全局引用，已以纯 Calcit 最小案例
+向上游汇报 [#2164](https://github.com/calcit-lang/calcit/issues/2164)，不据此自动删除或改写定义。
 前端/native 网络与浏览器流程仍待重验，不能将下面的历史结果当作本轮完成证明。
 生产服务仍须准备匹配的 CLI/native 依赖，保留原部署路径，不因前端 COS 通过而直接部署后端。
 
