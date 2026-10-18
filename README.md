@@ -21,7 +21,7 @@ caps verify --toolchain
 yarn check-client
 yarn check-server
 calcit calcit.cirru fix --workflow strict --verify --format edn
-calcit calcit.cirru test --require-match --summary-only
+calcit calcit.cirru --entry server test --require-match --summary-only
 yarn compile-page
 yarn release-page
 ```

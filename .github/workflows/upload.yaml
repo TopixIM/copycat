@@ -47,7 +47,7 @@ jobs:
           yarn check-client
           yarn check-server
           calcit calcit.cirru fix --workflow strict --verify --format edn
-          calcit calcit.cirru test --require-match --summary-only
+          calcit calcit.cirru --entry server test --require-match --summary-only
           calcit calcit.cirru analyze weak-types --only deprecated-call --summary-only --format json | jq -e '.data.summary.calls == 0'
 
       - name: Build browser client with CDN paths
