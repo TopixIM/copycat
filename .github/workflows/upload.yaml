@@ -14,11 +14,11 @@ jobs:
     runs-on: ubuntu-24.04
     timeout-minutes: 20
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.0
+      - uses: actions/checkout@v7.0.1
         with:
           persist-credentials: false
 
-      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+      - uses: actions/setup-node@v6.5.0
         with:
           node-version: 24
 
@@ -28,7 +28,7 @@ jobs:
           corepack prepare yarn@4.12.0 --activate
           yarn --version
 
-      - uses: calcit-lang/setup-calcit@ca701be5a471759e442aa053cd100720bbe1f09f # v1.5.0
+      - uses: calcit-lang/setup-calcit@v1.5.0
         with:
           deps-file: deps.cirru
           tools: calcit,caps
@@ -44,10 +44,10 @@ jobs:
         run: |
           calcit calcit.cirru edit format
           git diff --exit-code -- calcit.cirru
-          calcit calcit.cirru --check-only
-          calcit calcit.cirru --entry server --check-only
+          yarn check-client
+          yarn check-server
           calcit calcit.cirru fix --workflow strict --verify --format edn
-          calcit calcit.cirru test --require-match --summary-only
+          calcit calcit.cirru --entry server test --require-match --summary-only
           calcit calcit.cirru analyze weak-types --only deprecated-call --summary-only --format json | jq -e '.data.summary.calls == 0'
 
       - name: Build browser client with CDN paths
@@ -56,7 +56,7 @@ jobs:
           CDN_ORIGIN: https://cos-sh.tiye.me
           PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then prefix="${GITHUB_REPOSITORY}/pr/${PR_NUMBER}/"; else prefix="${GITHUB_REPOSITORY}/"; fi
+          if [ "$GITHUB_EVENT_NAME" = pull_request ]; then prefix="${GITHUB_REPOSITORY}/pr/${PR_NUMBER}/${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}/"; else prefix="${GITHUB_REPOSITORY}/"; fi
           base_url="${CDN_ORIGIN}/${prefix}"
           echo "prefix=$prefix" >> "$GITHUB_OUTPUT"
           echo "base-url=$base_url" >> "$GITHUB_OUTPUT"
@@ -66,7 +66,7 @@ jobs:
 
       - name: Upload frontend to COS and verify public files
         if: github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository
-        uses: worktools/cos-upload-action@06d6027dcca6413c5936e04a9b6e9f0d5ef71ba0 # v1.2.0
+        uses: worktools/cos-upload-action@v1.2.0
         with:
           source-dir: dist
           bucket: ${{ secrets.COS_BUCKET }}
@@ -83,7 +83,7 @@ jobs:
       - name: Upload web assets
         id: deploy
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: Pendect/action-rsyncer@8e05ffa5c93e5d9c9b167796b26044d2c616b2b9 # v2.0.0
+        uses: Pendect/action-rsyncer@v2.0.0
         env:
           DEPLOY_KEY: ${{secrets.rsync_private_key}}
         with:
@@ -100,7 +100,7 @@ jobs:
       - name: Upload server script
         id: deploy-server
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
-        uses: Pendect/action-rsyncer@8e05ffa5c93e5d9c9b167796b26044d2c616b2b9 # v2.0.0
+        uses: Pendect/action-rsyncer@v2.0.0
         env:
           DEPLOY_KEY: ${{secrets.rsync_private_key}}
         with:
