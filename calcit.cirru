@@ -118,7 +118,8 @@
           :code $ quote $ defn render-app! ()
             render! (mount-target)
               comp-container
-                decode-map-as (&map:get @*states :states) (:: 'Map 'Dynamic 'Dynamic)
+                app.schema/decode-nullable-field @*states :states $ fn (field-value)
+                  decode-map-as field-value $ :: 'Map 'Dynamic 'Dynamic
                 schema/decode-client-store @*store
               , dispatch!
           :examples $ []
@@ -164,15 +165,16 @@
               (:some store)
                 let
                     cursor $ []
-                    query $ let
-                        data $ &map:get states :data
-                      if (nil? data) | $ decode-map-as
-                        or
-                          &map:get
+                    query $ match (get states :data)
+                      (:some data)
+                        if (nil? data) | $ match
+                          get
                             decode-map-as data $ :: 'Map 'Tag 'Dynamic
                             , :query
-                          , |
-                        , 'String
+                          (:some query-value)
+                            decode-map-as (or query-value |) 'String
+                          (:none) |
+                      (:none) |
                     view $ :view store
                     logged-in? $ match view
                       (:guest) false
@@ -268,14 +270,21 @@
         %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-editor (states snippet)
             let
-                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
-                state $ if
-                  nil? $ &map:get states :data
-                  match snippet
-                    (:some item)
-                      app.schema/SnippetDraft :title (:title item) :content $ :content item
-                    (:none) (app.schema/SnippetDraft :title | :content |)
-                  decode-map-as (&map:get states :data) 'app.schema/SnippetDraft
+                cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
+                  decode-map-as field-value $ :: 'List 'Dynamic
+                state $ match (get states :data)
+                  (:some raw-state)
+                    if (nil? raw-state)
+                      match snippet
+                        (:some item)
+                          app.schema/SnippetDraft :title (:title item) :content $ :content item
+                        (:none) (app.schema/SnippetDraft :title | :content |)
+                      decode-map-as raw-state 'app.schema/SnippetDraft
+                  (:none)
+                    match snippet
+                      (:some item)
+                        app.schema/SnippetDraft :title (:title item) :content $ :content item
+                      (:none) (app.schema/SnippetDraft :title | :content |)
               div
                 {} $ :style $ style/merge-styles ui/flex ui/column
                   {} (:padding 16) (:overflow :auto)
@@ -291,7 +300,7 @@
                             :: 'Fn $ {} (:return 'Unit)
                               :args $ [] 'Enum
                         d! $ :: :states cursor $ {}
-                          :title $ decode-map-as (&map:get e :value) 'String
+                          :title $ app.schema/decode-nullable-field e :value $ fn (field-value) (decode-map-as field-value 'String)
                           :content $ :content state
                   =< nil 16
                   textarea $ {}
@@ -305,7 +314,7 @@
                             :args $ [] 'Enum
                       d! $ :: :states cursor $ {}
                         :title $ :title state
-                        :content $ decode-map-as (&map:get e :value) 'String
+                        :content $ app.schema/decode-nullable-field e :value $ fn (field-value) (decode-map-as field-value 'String)
                 =< nil 16
                 div
                   {} $ :style $ style/merge-styles ui/row-parted
@@ -349,11 +358,12 @@
         'comp-card $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-card (states snippet)
             let
-                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
-                hint? $ if
-                  nil? $ &map:get states :data
-                  , false $ :hint?
-                    decode-map-as (&map:get states :data) 'app.comp.list/CardState
+                cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
+                  decode-map-as field-value $ :: 'List 'Dynamic
+                hint? $ match (get states :data)
+                  (:some raw-state)
+                    if (nil? raw-state) false $ :hint? $ decode-map-as raw-state 'app.comp.list/CardState
+                  (:none) false
                 remove-plugin $ use-confirm (>> states :remove)
                   {} $ :text "|Sure to remove?"
               div
@@ -508,10 +518,12 @@
         'comp-login $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-login (states)
             let
-                cursor $ decode-map-as (&map:get states :cursor) (:: 'List 'Dynamic)
-                state $ if
-                  nil? $ &map:get states :data
-                  , initial-state $ decode-map-as (&map:get states :data) 'app.comp.login/LoginState
+                cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
+                  decode-map-as field-value $ :: 'List 'Dynamic
+                state $ match (get states :data)
+                  (:some raw-state)
+                    if (nil? raw-state) initial-state $ decode-map-as raw-state 'app.comp.login/LoginState
+                  (:none) initial-state
               div
                 {} $ :style $ style/merge-styles ui/flex ui/center
                 div ({})
@@ -527,7 +539,7 @@
                               :: 'Fn $ {} (:return 'Unit)
                                 :args $ [] 'Enum
                           d! $ :: :states cursor $ {}
-                            :username $ decode-map-as (&map:get e :value) 'String
+                            :username $ app.schema/decode-nullable-field e :value $ fn (field-value) (decode-map-as field-value 'String)
                             :password $ :password state
                     =< nil 8
                     div ({})
@@ -541,7 +553,7 @@
                                 :args $ [] 'Enum
                           d! $ :: :states cursor $ {}
                             :username $ :username state
-                            :password $ decode-map-as (&map:get e :value) 'String
+                            :password $ app.schema/decode-nullable-field e :value $ fn (field-value) (decode-map-as field-value 'String)
                   =< nil 8
                   div
                     {} $ :style $ {} (:text-align :right)
@@ -623,7 +635,7 @@
                         :: 'Fn $ {} (:return 'Unit)
                           :args $ [] 'Enum
                     d! $ :: :states parent-cursor $ {}
-                      :query $ decode-map-as (&map:get e :value) 'String
+                      :query $ app.schema/decode-nullable-field e :value $ fn (field-value) (decode-map-as field-value 'String)
               div
                 {}
                   :style $ {} $ :cursor |pointer
@@ -846,12 +858,15 @@
           :code $ quote $ defn decode-client-route (raw)
             let
                 router $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                name $ decode-map-as (&map:get router :name) 'Tag
+                name $ decode-nullable-field router :name $ fn (field-value) (decode-map-as field-value 'Tag)
               match name
                 :home $ ClientRoute :home
                 :create $ ClientRoute :create
-                :edit $ ClientRoute :edit $ decode-map-as (&map:get router :data) 'String
-                :profile $ ClientRoute :profile $ decode-map-as (&map:get router :data) (:: 'Map 'Number 'String)
+                :edit $ ClientRoute :edit $ decode-nullable-field router :data
+                  fn (field-value) (decode-map-as field-value 'String)
+                :profile $ ClientRoute :profile $ decode-nullable-field router :data
+                  fn (field-value)
+                    decode-map-as field-value $ :: 'Map 'Number 'String
                 _ $ ClientRoute :unknown router
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/ClientRoute)
@@ -861,18 +876,18 @@
             if (nil? raw) (Option :none)
               let
                   store $ decode-map-as raw $ :: 'Map 'Tag 'Dynamic
-                  session $ &map:get
-                    decode-sessions $ {} $ 0 (&map:get store :session)
-                    , 0
-                  length $ decode-map-as (&map:get store :reel-length) 'Number
+                  session $ decode-nullable-field store :session $ fn (raw-session)
+                    .unwrap $ get
+                      decode-sessions $ {} $ 0 raw-session
+                      , 0
+                  length $ decode-nullable-field store :reel-length $ fn (field-value) (decode-map-as field-value 'Number)
                   view $ if
-                    decode-map-as (&map:get store :logged-in?) 'Bool
-                    ClientView :authenticated
-                      decode-user-view $ &map:get store :user
-                      decode-client-route $ &map:get store :router
-                      decode-map-as (&map:get store :snippets) (:: 'Map 'String 'app.schema/Snippet)
-                      decode-map-as (&map:get store :count) 'Number
-                      decode-map-as (&map:get store :color) 'String
+                    decode-nullable-field store :logged-in? $ fn (field-value) (decode-map-as field-value 'Bool)
+                    ClientView :authenticated (decode-nullable-field store :user decode-user-view) (decode-nullable-field store :router decode-client-route)
+                      decode-nullable-field store :snippets $ fn (field-value)
+                        decode-map-as field-value $ :: 'Map 'String 'app.schema/Snippet
+                      decode-nullable-field store :count $ fn (field-value) (decode-map-as field-value 'Number)
+                      decode-nullable-field store :color $ fn (field-value) (decode-map-as field-value 'String)
                     ClientView :guest
                 Option :some $ &%{} ClientStore :session session :reel-length length :view view
           :examples $ []
@@ -904,6 +919,18 @@
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'app.schema/Database)
             :args $ [] 'Dynamic
+        'decode-nullable-field $ %{} 'CodeEntry
+          :doc "|Legacy wire/state/event decoder boundary: consume Some directly and pass missing fields to the same decoder as nil. Preserve existing nil errors/defaults and non-nil values; K follows map keys and T is the actual decoder result, not an asserted payload type."
+          :code $ quote $ defn decode-nullable-field (fields field decoder)
+            match (get fields field)
+              (:some value) (decoder value)
+              (:none) (decoder nil)
+          :examples $ []
+          :schema $ :: 'Fn $ {} (:return 'T)
+            :args $ [] (:: 'Map 'K 'Dynamic) 'K $ :: 'Fn
+              {} (:return 'T)
+                :args $ [] 'Dynamic
+            :generics $ [] 'K 'T
         'decode-server-event $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-server-event (raw)
             match raw $
@@ -918,11 +945,9 @@
               (:session/connect) (ServerOp :session/connect)
               (:session/disconnect) (ServerOp :session/disconnect)
               (:session/remove-message info)
-                ServerOp :session/remove-message $ decode-map-as
-                  &map:get
-                    decode-map-as info $ :: 'Map 'Tag 'Dynamic
-                    , :id
-                  , 'String
+                ServerOp :session/remove-message $ decode-nullable-field
+                  decode-map-as info $ :: 'Map 'Tag 'Dynamic
+                  , :id $ fn (field-value) (decode-map-as field-value 'String)
               (:user/log-in fields)
                 ServerOp :user/log-in $ decode-credentials fields
               (:user/sign-up fields)
@@ -957,7 +982,8 @@
               fn (sid session)
                 let
                     router $ without-nil-fields
-                      decode-map-as (&map:get session :router) (:: 'Map 'Tag 'Dynamic)
+                      decode-nullable-field session :router $ fn (field-value)
+                        decode-map-as field-value $ :: 'Map 'Tag 'Dynamic
                       [] :data :router :title
                     normalized $ assoc
                       without-nil-fields session $ [] :user-id :nickname
@@ -1188,8 +1214,12 @@
             let
                 now $ extract-time $ get-time!
               join-path calcit-dirname |backups
-                str $ &map:get now :month
-                str (&map:get now :day) |-snapshot.cirru
+                match (get now :month)
+                  (:some date-part) (str date-part)
+                  (:none) (str nil)
+                match (get now :day)
+                  (:some date-part) (str date-part |-snapshot.cirru)
+                  (:none) (str nil |-snapshot.cirru)
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'String)
             :args $ []

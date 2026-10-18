@@ -33,7 +33,7 @@ Caps 按固定版本构建并选择 `calcit.std`、`calcit-wss` 的 native reali
 
 CI uploads only `dist` to COS, using the action's built-in public verification.
 Frontend assets use `https://cos-sh.tiye.me/TopixIM/copycat/` on main and an
-isolated `TopixIM/copycat/pr/<number>/` prefix on PRs. The frontend HTML deployment
+isolated `TopixIM/copycat/pr/<number>/<run>-<attempt>/` prefix on PRs. The frontend HTML deployment
 remains `/web-assets/repo/TopixIM/copycat`. Local builds default to relative assets;
 set `VITE_BASE_URL` to override the asset base.
 
@@ -41,8 +41,17 @@ set `VITE_BASE_URL` to override the asset base.
 
 已对齐正式 Cumulo Reel 0.0.57 / WS-EDN 0.0.42 依赖图，版本以 `deps.cirru` 为准。
 旧存档的可空字段适配器已直接匹配 Option，运行验证保留 false、0、空字符串、未知字段和缺失字段；
-原 8 项 native 定义测试通过。仍有 33 处旧 Map 读取未迁移，双入口门禁尚未通过，
-前端/native 网络与浏览器流程待重验，不能将下面的历史结果当作本轮完成证明。
+应用剩余 33 处旧 Map 读取已迁移为 Option：状态初值显式区分缺失和 nil，
+线协议和事件字段继续交给原 decoder，缺失字段保持原解码错误，不凭空添加业务默认值。
+双入口可达定义检查和完整 strict 通过。按真实运行目标分组的全命名空间检查
+覆盖全部 20 个应用命名空间（共享命名空间分别检查）：browser 78/78、native 75/75。
+不将浏览器宿主 API 放进 native 检查，也不将 native FFI 当作浏览器代码生成。
+原 8 项定义测试在 native 与生成的 JS 各通过 8/8；临时 native/JS 回放验证 false、0、空字符串、
+缺失/nil、空编辑参数和匿名会话解析，不将回放辅助定义或额外校验脚本纳入仓库。
+当前 JS 生成和 Vite 生产构建通过，保留原有 bundle 大小警告。
+格式化仍报告 47 个定义中的 56 处 Dynamic/未绑定类型槽，需继续逐项区分真实异构边界和可收紧合同；
+完整 strict 通过不等同于这些类型债务已经清零，不放宽基线来掩盖它们。
+前端/native 网络与浏览器流程仍待重验，不能将下面的历史结果当作本轮完成证明。
 生产服务仍须准备匹配的 CLI/native 依赖，保留原部署路径，不因前端 COS 通过而直接部署后端。
 
 ### 迁移验证与限制（上一轮 alpha.3 历史）

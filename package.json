@@ -5,11 +5,11 @@
   "packageManager": "yarn@4.12.0",
   "main": "index.js",
   "scripts": {
-    "check-client": "calcit calcit.cirru --check-only",
-    "check-server": "calcit calcit.cirru --entry server --check-only",
+    "check-client": "calcit calcit.cirru --check-only --ns 'app.$meta' --ns app.client --ns app.comp.container --ns app.comp.editor --ns app.comp.list --ns app.comp.login --ns app.comp.navigation --ns app.comp.profile --ns app.config --ns app.js-ffi.text --ns app.schema --ns app.style",
+    "check-server": "calcit calcit.cirru --entry server --check-only --ns 'app.$meta' --ns app.config --ns app.schema --ns app.server --ns app.twig.container --ns app.twig.user --ns app.updater --ns app.updater.router --ns app.updater.session --ns app.updater.snippet --ns app.updater.user",
     "compile-page": "calcit calcit.cirru js",
     "release-page": "vite build --base=\"${VITE_BASE_URL:-./}\"",
-    "watch-page": "calcit calcit.cirru js --watch"
+    "watch-page": "calcit calcit.cirru --watch"
   },
   "repository": {
     "type": "git",
