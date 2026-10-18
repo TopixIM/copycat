@@ -55,7 +55,15 @@ set `VITE_BASE_URL` to override the asset base.
 完整 strict 通过不等同于这些类型债务已经清零，不放宽基线来掩盖它们。
 旧定义引用盘点发现 `query usages` 会把局部遮蔽绑定误报为全局引用，已以纯 Calcit 最小案例
 向上游汇报 [#2164](https://github.com/calcit-lang/calcit/issues/2164)，不据此自动删除或改写定义。
-前端/native 网络与浏览器流程仍待重验，不能将下面的历史结果当作本轮完成证明。
+当前 native 服务使用临时目录中的合成数据库完成注册、创建/编辑 Unicode 片段、筛选、成员页，
+并在保存和重启后恢复内容、复制计数及自动登录；没有使用生产数据。
+真实浏览器删除操作暴露旧的双参数 cursor/data 回调：Alerts `.show` 现在调用单参数 Enum dispatch。
+已直接传入现有 `d!`，弹窗打开与经授权的合成片段确认删除通过；上游裸 Fn 合同漏检已报告
+[Alerts #102](https://github.com/Respo/alerts.calcit/issues/102)。不另加兼容包装或强转。
+复制计数和提示已验证，但当前内置浏览器的虚拟剪贴板未捕获旧式复制，粘贴也明确报虚拟剪贴板为空；
+实际剪贴板内容尚未验证，不能以 “Copied” 提示代替，也不能据此断定应用复制失败。
+这次运行使用已存在的精确依赖源码/native 产物；干净环境的严格 Caps/toolchain 仍须由 CI 验收。
+完整运行验收仍未完成，不能将下面的历史结果当作本轮完成证明。
 生产服务仍须准备匹配的 CLI/native 依赖，保留原部署路径，不因前端 COS 通过而直接部署后端。
 
 ### 迁移验证与限制（上一轮 alpha.3 历史）

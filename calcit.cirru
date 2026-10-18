@@ -391,15 +391,9 @@
                     {}
                       :style $ {} $ :color :red
                       :on-click $ fn (e d!)
-                        .show remove-plugin
-                          fn (plugin-cursor data)
-                            d! $ :: :states
-                              decode-map-as plugin-cursor $ :: 'List 'Dynamic
-                              , data
-                            , &unit
-                          fn ()
-                            d! $ :: :snippet/remove $ :id snippet
-                            , &unit
+                        .show remove-plugin d! $ fn ()
+                          d! $ :: :snippet/remove $ :id snippet
+                          , &unit
                         , &unit
                     comp-i :delete 14 $ hsl 0 80 70
                 pre $ {}
