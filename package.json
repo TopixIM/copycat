@@ -24,6 +24,6 @@
     "bottom-tip": "^0.1.5",
     "copy-to-clipboard": "^3.3.3",
     "feather-icons": "^4.29.1",
-    "vite": "8.2.2"
+    "vite": "8.2.4"
   }
 }
