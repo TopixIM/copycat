@@ -6,7 +6,7 @@
     :default $ {} (:description |) (:init-fn 'app.client/main!) (:mode :js) (:reload-fn 'app.client/reload!) (:target :browser)
       :feature-policy $ {}
       :modules $ [] |respo.calcit/ |recollect/ |memof/ |respo-ui.calcit/ |ws-edn.calcit/ |cumulo-util.calcit/ |respo-message.calcit/ |cumulo-reel.calcit/ |respo-feather.calcit/ |alerts.calcit/ |js-ffi/
-      :type-slots $ {}
+      :type-slots $ {} $ :dispatch-op |app.schema/Op
     :server $ {} (:description |) (:init-fn 'app.server/main!) (:mode :native) (:reload-fn 'app.server/reload!) (:target :native)
       :feature-policy $ {}
       :modules $ [] |recollect/ |memof/ |ws-edn.calcit/ |cumulo-util.calcit/ |cumulo-reel.calcit/ |calcit-wss/ |calcit.std/
@@ -64,7 +64,7 @@
               _ $ ws-send! op
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'Unit)
-            :args $ [] 'Dynamic
+            :args $ [] 'app.schema/Op
             :features $ #{} :js-ffi
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
@@ -415,13 +415,15 @@
                         , &unit
                       , 2000
                     , &unit
-                when hint? $ div
-                  {} $ :style $ {} (:position :absolute) (:bottom 16) (:left 16)
-                    :background-color $ hsl 0 0 0
-                    :color :white
-                    :font-family ui/font-fancy
-                    :padding "|0 8px"
-                  <> |Copied
+                if hint?
+                  div
+                    {} $ :style $ {} (:position :absolute) (:bottom 16) (:left 16)
+                      :background-color $ hsl 0 0 0
+                      :color :white
+                      :font-family ui/font-fancy
+                      :padding "|0 8px"
+                    <> |Copied
+                  span $ {}
                 .render remove-plugin
           :examples $ []
           :schema $ :: 'Fn $ {} (:return 'respo.schema/Component)
@@ -784,6 +786,22 @@
           :code $ quote $ defstruct Message (:id 'String) (:text 'String)
           :examples $ []
           :schema $ :: 'StructDef
+        'Op $ %{} 'CodeEntry
+          :doc "|Client dispatch Op, bound to the :dispatch-op type slot. Local variants (:states, :effect/connect) stay in the browser; the rest are sent over the wire as before and decoded into ServerOp on the server."
+          :code $ quote $ defenum Op
+            :states (:: 'List 'Dynamic) 'Dynamic
+            :effect/connect
+            :session/remove-message 'String
+            :user/log-in 'Dynamic
+            :user/sign-up 'Dynamic
+            :user/log-out 'Nil
+            :router/change 'Dynamic
+            :snippet/create 'Dynamic
+            :snippet/update 'Dynamic
+            :snippet/remove 'String
+            :snippet/count-usage 'String
+          :examples $ []
+          :schema $ :: 'Enum
         'RouteRequest $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct RouteRequest (:name 'Tag)
             :data $ :: 'Option 'String
