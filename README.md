@@ -10,9 +10,9 @@ Demo http://copycat.topix.im/
 
 Workflow https://github.com/Cumulo/cumulo-workflow.calcit/ .
 
-当前迁移候选使用已发布的 Calcit / `@calcit/procs` 0.31.0、Caps 0.1.1、Node.js 24
+当前使用正式 Calcit / `@calcit/procs` 0.38.0、Caps 0.1.1、Node.js 24
 和 Yarn 4.12.0。`calcit.cirru` 保存源码与入口，`deps.cirru` 固定依赖。
-原严格依赖门槛保留，完整迁移尚未验收：
+继续使用原严格依赖门禁。发布前请准备后端依赖、原生库和独立存档备份，再同步切换前后端。
 
 ```sh
 caps --strict --ci
@@ -37,7 +37,7 @@ isolated `TopixIM/copycat/pr/<number>/<run>-<attempt>/` prefix on PRs. The front
 remains `/web-assets/repo/TopixIM/copycat`. Local builds default to relative assets;
 set `VITE_BASE_URL` to override the asset base.
 
-### 当前 0.30.1 迁移状态
+### 历史 0.30.1 迁移记录
 
 已对齐正式 Cumulo Reel 0.0.57 / WS-EDN 0.0.42 依赖图，版本以 `deps.cirru` 为准。
 Confirm 上游合同修复已发布为正式 Alerts 0.10.56，本应用固定该 tag，并在实际事件入口声明单 Enum dispatch 合同。
