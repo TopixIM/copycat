@@ -10,7 +10,7 @@ Demo http://copycat.topix.im/
 
 Workflow https://github.com/Cumulo/cumulo-workflow.calcit/ .
 
-当前使用正式 Calcit / `@calcit/procs` 0.38.0、Caps 0.1.1、Node.js 24
+当前使用正式 Calcit / `@calcit/procs` 0.40.0、Caps 0.1.1、Node.js 24
 和 Yarn 4.12.0。`calcit.cirru` 保存源码与入口，`deps.cirru` 固定依赖。
 继续使用原严格依赖门禁。发布前请准备后端依赖、原生库和独立存档备份，再同步切换前后端。
 

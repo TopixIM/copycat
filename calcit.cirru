@@ -54,7 +54,7 @@
                 do
                   reset! *states $ decode-map-as
                     update-states @*states
-                      decode-map-as cursor $ List Dynamic
+                      decode-map-as cursor $ List app.schema/StateKey
                       , s
                     Map Tag Dynamic
                   , &unit
@@ -262,7 +262,7 @@
           :code $ quote $ defcomp comp-editor (states snippet)
             let
                 cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
-                  decode-map-as field-value $ List Dynamic
+                  decode-map-as field-value $ List app.schema/StateKey
                 state $ match (get states :data)
                   (:some raw-state)
                     if (nil? raw-state)
@@ -347,7 +347,7 @@
           :code $ quote $ defcomp comp-card (states snippet)
             let
                 cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
-                  decode-map-as field-value $ List Dynamic
+                  decode-map-as field-value $ List app.schema/StateKey
                 hint? $ match (get states :data)
                   (:some raw-state)
                     if (nil? raw-state) false $ :hint? $ decode-map-as raw-state 'app.comp.list/CardState
@@ -500,7 +500,7 @@
           :code $ quote $ defcomp comp-login (states)
             let
                 cursor $ app.schema/decode-nullable-field states :cursor $ fn (field-value)
-                  decode-map-as field-value $ List Dynamic
+                  decode-map-as field-value $ List app.schema/StateKey
                 state $ match (get states :data)
                   (:some raw-state)
                     if (nil? raw-state) initial-state $ decode-map-as raw-state 'app.comp.login/LoginState
@@ -622,7 +622,7 @@
                     <> $ str n
                   (:none) (<> |)
           :examples $ []
-          :schema $ quote $ Fn Bool (Option Number) String (List Dynamic) (-> respo.schema/Component)
+          :schema $ quote $ Fn Bool (Option Number) String (List app.schema/StateKey) (-> respo.schema/Component)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.navigation
           :require
@@ -757,7 +757,7 @@
         'Op $ %{} 'CodeEntry
           :doc "|Client dispatch Op, bound to the :dispatch-op type slot. Local variants (:states, :effect/connect) stay in the browser; the rest are sent over the wire as before and decoded into ServerOp on the server."
           :code $ quote $ defenum Op
-            :states (List Dynamic) Dynamic
+            :states (List app.schema/StateKey) Dynamic
             :effect/connect
             :session/remove-message String
             :user/log-in app.schema/Credentials
@@ -806,6 +806,10 @@
           :code $ quote $ defstruct SnippetDraft (:title String) (:content String)
           :examples $ []
           :schema $ quote StructDef
+        'StateKey $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion StateKey Tag String Number
+          :examples $ []
+          :schema $ quote UnionDef
         'User $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct User (:id String) (:name String) (:password String)
             :nickname $ Option String
@@ -880,11 +884,8 @@
         'decode-credentials $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-credentials (raw)
             let
-                fields $ decode-map-as raw $ List String
-              assert= 2 $ count fields
-              Credentials :username
-                option:unwrap $ get fields 0
-                , :password $ option:unwrap $ get fields 1
+                fields $ decode-map-as raw $ Tuple String String
+              let[] (username password) fields $ Credentials :username username :password password
           :examples $ []
           :schema $ quote $ Fn Dynamic (-> app.schema/Credentials)
         'decode-database $ %{} 'CodeEntry (:doc |)
