@@ -460,7 +460,7 @@
           :code $ quote $ def style-card
             {} (:white-space :nowrap) (:text-overflow :ellipsis) (:overflow :hidden) (:line-height |24px) (:width 400) (:cursor :pointer) (:margin-right 16) (:margin-top 16) (:position :relative)
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag respo-ui.schema/StyleValue
         'style-code-area $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-code-area
             {} (:margin 0)
@@ -475,14 +475,14 @@
               :font-family ui/font-code
               :background-color :white
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag respo-ui.schema/StyleValue
         'style-toolbar $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def style-toolbar
             merge ui/row-parted $ {} (:width |100%) (:position :absolute) (:top 0) (:padding 8)
               :background-color $ hsl 0 0 100
               :border $ str "|1px solid " $ hsl 0 0 90
           :examples $ []
-          :schema $ quote Dynamic
+          :schema $ quote $ Map Tag respo-ui.schema/StyleValue
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.comp.list
           :require
@@ -557,7 +557,7 @@
         'on-submit $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-submit (username password signup?)
             fn (e dispatch!)
-              hint-fn $ Fn (Map Tag Dynamic)
+              hint-fn $ Fn respo.schema/RespoEvent
                 Fn app.schema/Op $ -> Unit
                 -> Unit
                 :features :js-ffi
@@ -568,7 +568,7 @@
                 format-cirru-edn $ [] username password
           :examples $ []
           :schema $ quote $ Fn String String Bool
-            -> $ Fn (Map Tag Dynamic)
+            -> $ Fn respo.schema/RespoEvent
               Fn schema/Op $ -> Unit
               -> Unit
               :features :js-ffi
