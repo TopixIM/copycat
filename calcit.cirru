@@ -1303,13 +1303,15 @@
           :schema $ quote String
         'sync-clients! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn sync-clients! (reel)
-            foldl
-              map-entries $ :sessions $ :db reel
-              , &unit $ fn (_unit entry)
-                let
-                    store $ twig-container (:db reel) (:value entry) (:records reel)
-                  reset! *pending-stores $ assoc @*pending-stores (:key entry) store
-                  , &unit
+            let
+                reel-length $ .len $ :records reel
+              foldl
+                map-entries $ :sessions $ :db reel
+                , &unit $ fn (_unit entry)
+                  let
+                      store $ twig-container (:db reel) (:value entry) reel-length
+                    reset! *pending-stores $ assoc @*pending-stores (:key entry) store
+                    , &unit
             , &unit
           :examples $ []
           :schema $ quote $ Fn (cumulo-reel.core/ReelState schema/Database) (-> Unit) (:features :js-ffi)
@@ -1367,13 +1369,13 @@
     'app.twig.container $ %{} 'FileEntry
       :defs $ {}
         'twig-container $ %{} 'CodeEntry (:doc |)
-          :code $ quote $ defn twig-container (db session records)
+          :code $ quote $ defn twig-container (db session reel-length)
             let
                 user-id $ :user-id session
                 router $ app.schema/route-to-wire $ :router session
                 base-data $ {}
                   :session $ app.schema/session-to-wire session
-                  :reel-length $ count records
+                  :reel-length reel-length
               match user-id
                 (:none) (assoc base-data :logged-in? false)
                 (:some uid)
@@ -1397,8 +1399,7 @@
                       :count $ count $ :sessions db
                       :color $ rand-hex-color!
           :examples $ []
-          :schema $ quote $ Fn app.schema/Database app.schema/Session
-            List $ List Dynamic
+          :schema $ quote $ Fn app.schema/Database app.schema/Session Number
             -> $ Map Tag Dynamic
         'twig-members $ %{} 'CodeEntry
           :doc "|Map session ids to concrete display names. Keep an empty name for guests or sessions whose user is absent; never expose an Option or list where the profile expects a name map."
