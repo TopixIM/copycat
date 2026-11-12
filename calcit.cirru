@@ -431,7 +431,7 @@
                       lower-case $ :title $ :value entry
                       lower-case query
                   .sort-by $ fn (entry)
-                    hint-fn $ Fn (calcit.core/MapEntry String app.schema/Snippet) (-> Number)
+                    hint-fn $ Fn (MapEntry String app.schema/Snippet) (-> Number)
                     negate $ :copied-times $ :value entry
                   .map $ fn (entry)
                     [] (:key entry)
@@ -521,7 +521,7 @@
                         :style ui/input
                         :on-input $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/Op $ -> Unit
+                            Fn schema/Op $ -> Unit
                             -> Unit
                           d! $ :: :states cursor $ {}
                             :username $ respo.core/event-value e
@@ -533,7 +533,7 @@
                         :style ui/input
                         :on-input $ fn (e d!)
                           hint-fn $ Fn respo.schema/RespoEvent
-                            Fn app.schema/Op $ -> Unit
+                            Fn schema/Op $ -> Unit
                             -> Unit
                           d! $ :: :states cursor $ {}
                             :username $ :username state
@@ -558,7 +558,7 @@
           :code $ quote $ defn on-submit (username password signup?)
             fn (e dispatch!)
               hint-fn $ Fn respo.schema/RespoEvent
-                Fn app.schema/Op $ -> Unit
+                Fn schema/Op $ -> Unit
                 -> Unit
                 :features :js-ffi
               dispatch! $ if signup?
@@ -865,7 +865,7 @@
                     decode-map-as field-value $ Map Number String
                 _ $ ClientRoute :unknown router
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> ClientRoute)
+          :schema $ quote $ Fn Input (-> ClientRoute) (:generics Input)
         'decode-client-store $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-client-store (raw)
             if (nil? raw) None $ let
@@ -885,15 +885,16 @@
                   ClientView :guest
               Some $ &%{} ClientStore :session session :reel-length length :view view
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ Option ClientStore
+            :generics Input
         'decode-credentials $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-credentials (raw)
             let
                 fields $ decode-map-as raw $ Tuple String String
               let[] (username password) fields $ Credentials :username username :password password
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Credentials)
+          :schema $ quote $ Fn Input (-> Credentials) (:generics Input)
         'decode-database $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-database (raw)
             let
@@ -906,7 +907,7 @@
                   decode-users $ :users input
                   , :snippets $ :snippets input
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Database)
+          :schema $ quote $ Fn Input (-> Database) (:generics Input)
         'decode-nullable-field $ %{} 'CodeEntry
           :doc "|Legacy wire/state/event decoder boundary: consume Some directly and pass missing fields to the same decoder as nil. Preserve existing nil errors/defaults and non-nil values; K follows map keys and T is the actual decoder result, not an asserted payload type."
           :code $ quote $ defn decode-nullable-field (fields field decoder)
@@ -924,7 +925,7 @@
               :patch changes
               ServerEvent :patch $ recollect.schema/decode-changes changes
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> ServerEvent)
+          :schema $ quote $ Fn Input (-> ServerEvent) (:generics Input)
         'decode-server-op $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-server-op (raw)
             match raw
@@ -959,7 +960,7 @@
               (:effect/persist) (ServerOp :effect/persist)
               _ $ ServerOp :unknown raw
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> ServerOp)
+          :schema $ quote $ Fn Input (-> ServerOp) (:generics Input)
         'decode-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-sessions (raw)
             filter-map-kv
@@ -985,7 +986,7 @@
                 [] :nickname :avatar
               , 'app.schema/UserView
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> UserView)
+          :schema $ quote $ Fn Input (-> UserView) (:generics Input)
         'decode-users $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-users (raw)
             filter-map-kv
@@ -1254,7 +1255,7 @@
             when (not config/dev?) (raise "|reloading only happens in dev mode")
             clear-twig-caches!
             reset! *reel $ refresh-reel @*reel @*initial-db $ fn (db op sid id time)
-              hint-fn $ Fn app.schema/Database Dynamic Dynamic Dynamic Dynamic $ -> app.schema/Database
+              hint-fn $ Fn schema/Database Dynamic Dynamic Dynamic Dynamic $ -> schema/Database
               updater db (decode-map-as op 'app.schema/ServerOp) (decode-map-as sid 'Number) (decode-map-as id 'String) (decode-map-as time 'Number)
             reset! *reader-reel @*reel
             sync-clients! @*reader-reel
