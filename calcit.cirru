@@ -43,7 +43,7 @@
                   :on-data on-server-data
               , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'dispatch! $ %{} 'CodeEntry
           :doc "|Respo/wire boundary: heterogeneous operation payloads remain open; decode the states cursor before the published state updater. Remote operations retain their anonymous-enum wire representation."
           :code $ quote $ defn dispatch! (op)
@@ -68,7 +68,7 @@
                 ws-send! $ :: :user/log-in $ [] (:username credentials) (:password credentials)
               _ $ ws-send! op
           :examples $ []
-          :schema $ quote $ Fn schema/Op (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn schema/Op (-> Unit) (:features :io :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn main! ()
             println "|Running mode:" $ if config/dev? |dev |release
@@ -82,7 +82,7 @@
               , &unit
             println "|App started!"
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'mount-target $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn mount-target ()
             respo.ffi.browser/narrow-element $
@@ -99,7 +99,7 @@
                   reset! *store $ patch-twig @*store changes
                   , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit)
+          :schema $ quote $ Fn Dynamic (-> Unit) (:features :io :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -111,7 +111,7 @@
                 println "|Code updated."
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'render-app! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-app! ()
             render! (mount-target)
@@ -121,7 +121,7 @@
                 schema/decode-client-store @*store
               , dispatch!
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'simulate-login! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn simulate-login! ()
             match
@@ -134,7 +134,7 @@
               (:none)
                 do (println "|Found no storage.") &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.client
           :require
@@ -976,8 +976,9 @@
                       , :router router
                   MapEntryDecision :keep sid $ decode-map-as normalized 'app.schema/Session
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ Map Number Session
+            :generics Input
         'decode-user-view $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-user-view (raw)
             decode-map-as
@@ -996,8 +997,9 @@
                   without-nil-fields user $ [] :nickname :avatar
                   , 'app.schema/User
           :examples $ []
-          :schema $ quote $ Fn Dynamic
+          :schema $ quote $ Fn Input
             -> $ Map String User
+            :generics Input
         'messages-to-wire $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn messages-to-wire (messages)
             filter-map-kv messages $ fn (id message)
@@ -1165,7 +1167,7 @@
                 _ $ reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
               , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic Number (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn Dynamic Number (-> Unit) (:features :io :js-ffi :state)
         'flush-pending! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn flush-pending! ()
             foldl (map-entries @*pending-stores) &unit $ fn (_unit entry)
@@ -1197,7 +1199,7 @@
                 , &unit
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'get-backup-path! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn get-backup-path! ()
             let
@@ -1232,11 +1234,11 @@
             on-control-c on-exit!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'on-exit! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn on-exit! () (persist-db!) (quit! 0)
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'persist-db! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn persist-db! ()
             let
@@ -1249,7 +1251,7 @@
               check-write-file! backup-path file-content
               , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :js-ffi :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! () (println "|Code updated.")
             when (not config/dev?) (raise "|reloading only happens in dev mode")
@@ -1262,7 +1264,7 @@
             flush-pending!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'render-loop! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn render-loop! ()
             when
@@ -1272,7 +1274,7 @@
             flush-pending!
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'run-server! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn run-server! (port)
             wss-serve!
@@ -1294,7 +1296,7 @@
                   (:blob _sid _buffer) (println "|Ignoring binary message.")
                 , &unit
           :examples $ []
-          :schema $ quote $ Fn Number (-> FfiTask) (:features :js-ffi)
+          :schema $ quote $ Fn Number (-> FfiTask) (:features :io :js-ffi :state)
         'storage-file $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def storage-file
             if (empty? calcit-dirname)
@@ -1315,7 +1317,7 @@
                     , &unit
             , &unit
           :examples $ []
-          :schema $ quote $ Fn (cumulo-reel.core/ReelState schema/Database) (-> Unit) (:features :js-ffi)
+          :schema $ quote $ Fn (cumulo-reel.core/ReelState schema/Database) (-> Unit) (:features :js-ffi :state)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.server
           :require (app.schema :as schema)
@@ -1450,7 +1452,7 @@
               (:snippet/count-usage op-data) (snippet/count-usage db op-data sid op-id op-time)
               _ $ do (eprintln "|Unknown op:" op) db
           :examples $ []
-          :schema $ quote $ Fn schema/Database schema/ServerOp Number String Number (-> schema/Database) (:features :js-ffi)
+          :schema $ quote $ Fn schema/Database schema/ServerOp Number String Number (-> schema/Database) (:features :io :js-ffi)
       :ns $ %{} 'NsEntry (:doc |)
         :code $ quote $ ns app.updater
           :require (app.updater.session :as session) (app.updater.user :as user) (app.updater.router :as router) (app.updater.snippet :as snippet) (app.schema :as schema)
