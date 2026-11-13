@@ -99,7 +99,7 @@
                   reset! *store $ patch-twig @*store changes
                   , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic (-> Unit) (:features :io :state)
+          :schema $ quote $ Fn Input (-> Unit) (:generics Input) (:features :io :state)
         'reload! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn reload! ()
             if
@@ -1167,7 +1167,7 @@
                 _ $ reset! *reel $ reel-reducer @*reel updater op sid op-id op-time config/dev?
               , &unit
           :examples $ []
-          :schema $ quote $ Fn Dynamic Number (-> Unit) (:features :io :js-ffi :state)
+          :schema $ quote $ Fn Input Number (-> Unit) (:generics Input) (:features :io :js-ffi :state)
         'flush-pending! $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn flush-pending! ()
             foldl (map-entries @*pending-stores) &unit $ fn (_unit entry)
