@@ -813,6 +813,9 @@
           :code $ quote $ defstruct SnippetDraft (:title String) (:content String)
           :examples $ []
           :schema $ quote StructDef
+        'SnippetWireValue $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defunion SnippetWireValue String Number
+          :examples $ []
         'StateKey $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defunion StateKey Tag String Number
           :examples $ []
@@ -1008,7 +1011,11 @@
                 :text $ :text message
           :examples $ []
           :schema $ quote $ Fn (Map String Message)
-            -> $ Map String Dynamic
+            -> $ Map String $ Map Tag String
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-wire-fields)
+            :code $ quote $ assert=
+              {} $ |key $ {} (:id |id) (:text "|消息🐈")
+              messages-to-wire $ {} $ |key (Message :id |id :text "|消息🐈")
         'notification $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def notification
             {} (:id nil) (:kind nil) (:text nil)
@@ -1073,18 +1080,29 @@
             {} (:id nil) (:title |) (:content |) (:edited-at nil) (:copied-times 0)
           :examples $ []
           :schema $ quote Dynamic
+        'snippet-to-wire $ %{} 'CodeEntry (:doc |)
+          :code $ quote $ defn snippet-to-wire (snippet)
+            {}
+              :id $ :id snippet
+              :title $ :title snippet
+              :content $ :content snippet
+              :edited-at $ :edited-at snippet
+              :copied-times $ :copied-times snippet
+          :examples $ []
+          :schema $ quote $ Fn Snippet
+            -> $ Map Tag SnippetWireValue
         'snippets-to-wire $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn snippets-to-wire (snippets)
             filter-map-kv snippets $ fn (id snippet)
-              MapEntryDecision :keep id $ {}
-                :id $ :id snippet
-                :title $ :title snippet
-                :content $ :content snippet
-                :edited-at $ :edited-at snippet
-                :copied-times $ :copied-times snippet
+              MapEntryDecision :keep id $ snippet-to-wire snippet
           :examples $ []
           :schema $ quote $ Fn (Map String Snippet)
-            -> $ Map String Dynamic
+            -> $ Map String $ Map Tag SnippetWireValue
+          :tests $ [] $ %{} 'TestEntry (:name |preserves-wire-fields)
+            :code $ quote $ assert=
+              {} $ |key $ {} (:id |id) (:title "|片段") (:content "|代码🐈") (:edited-at 99) (:copied-times 3)
+              snippets-to-wire $ {} $ |key
+                Snippet :id |id :title "|片段" :content "|代码🐈" :edited-at 99 :copied-times 3
         'user $ %{} 'CodeEntry (:doc |)
           :code $ quote $ def user
             {} (:name nil) (:id nil) (:nickname nil) (:avatar nil) (:password nil)
