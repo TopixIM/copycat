@@ -45,7 +45,7 @@
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
         'dispatch! $ %{} 'CodeEntry
-          :doc "|Respo/wire boundary: heterogeneous operation payloads remain open; decode the states cursor before the published state updater. Remote operations retain their anonymous-enum wire representation."
+          :doc "|Respo/wire boundary: local state and auth operations are handled directly; remote operations are converted by app.schema/op-to-wire before ws-send! so the wire keeps its legacy map shape."
           :code $ quote $ defn dispatch! (op)
             when
               and config/dev? $ match op
@@ -66,7 +66,7 @@
                 ws-send! $ :: :user/sign-up $ [] (:username credentials) (:password credentials)
               (:user/log-in credentials)
                 ws-send! $ :: :user/log-in $ [] (:username credentials) (:password credentials)
-              _ $ ws-send! op
+              _ $ ws-send! $ app.schema/op-to-wire op
           :examples $ []
           :schema $ quote $ Fn schema/Op (-> Unit) (:features :io :js-ffi :state)
         'main! $ %{} 'CodeEntry (:doc |)
@@ -319,18 +319,11 @@
                     :on-click $ fn (e d!)
                       match snippet
                         (:some item)
-                          d! $ :: :snippet/update $ {}
-                            :id $ :id item
-                            :title $ :title state
-                            :content $ :content state
-                            :edited-at $ :edited-at item
-                            :copied-times $ :copied-times item
+                          d! $ app.schema/Op :snippet/update $ app.schema/Snippet :id (:id item) :title (:title state) :content (:content state) :edited-at (:edited-at item) :copied-times (:copied-times item)
                         (:none)
-                          d! $ :: :snippet/create $ {}
-                            :title $ :title state
-                            :content $ :content state
+                          d! $ app.schema/Op :snippet/create $ app.schema/SnippetDraft :title (:title state) :content (:content state)
                       d! $ :: :states cursor nil
-                      d! $ :: :router/change $ {} (:name :home)
+                      d! $ app.schema/Op :router/change $ app.schema/RouteRequest :name :home :data None :router None :title None
                   span $ {}
           :examples $ []
           :schema $ quote $ Fn (Map Dynamic Dynamic) (Option app.schema/Snippet) (-> respo.schema/Component)
@@ -378,8 +371,9 @@
                     span
                       {} (:style ui/center)
                         :on-click $ fn (e d!)
-                          d! $ :: :router/change $ {} (:name :edit)
-                            :data $ :id snippet
+                          d! $ app.schema/Op :router/change $ app.schema/RouteRequest :name :edit :data
+                            Some $ :id snippet
+                            , :router None :title None
                       comp-i :edit 14 $ hsl 200 80 70
                   span
                     {}
@@ -594,7 +588,7 @@
               div
                 {}
                   :on-click $ fn (e d!)
-                    d! $ :: :router/change $ {} (:name :home)
+                    d! $ app.schema/Op :router/change $ app.schema/RouteRequest :name :home :data None :router None :title None
                   :style $ style/merge-styles ui/row-center $ {} (:cursor :pointer)
                 <> $ :title config/site
                 space-x 24
@@ -602,7 +596,7 @@
                   {}
                     :style $ {} $ :cursor :pointer
                     :on-click $ fn (e d!)
-                      d! $ :: :router/change $ {} (:name :create) (:data nil)
+                      d! $ app.schema/Op :router/change $ app.schema/RouteRequest :name :create :data None :router None :title None
                   comp-i :plus 14 $ hsl 200 80 70
                 space-x 24
                 input $ {}
@@ -619,7 +613,7 @@
                 {}
                   :style $ {} $ :cursor |pointer
                   :on-click $ fn (e d!)
-                    d! $ :: :router/change $ {} (:name :profile)
+                    d! $ app.schema/Op :router/change $ app.schema/RouteRequest :name :profile :data None :router None :title None
                 <> $ if logged-in? |Me |Guest
                 space-x 8
                 match count-members
@@ -762,7 +756,7 @@
           :examples $ []
           :schema $ quote StructDef
         'Op $ %{} 'CodeEntry
-          :doc "|Client dispatch Op, bound to the :dispatch-op type slot. Local variants (:states, :effect/connect) stay in the browser; the rest are sent over the wire as before and decoded into ServerOp on the server."
+          :doc "|Client dispatch Op bound to the :dispatch-op type slot. Local variants stay in the browser; remote variants carry the same nominal payload types as ServerOp, and op-to-wire converts them to the legacy anonymous-enum map form before sending."
           :code $ quote $ defenum Op
             :states (List app.schema/StateKey) Dynamic
             :effect/connect
@@ -770,13 +764,17 @@
             :user/log-in app.schema/Credentials
             :user/sign-up app.schema/Credentials
             :user/log-out Nil
-            :router/change Dynamic
-            :snippet/create Dynamic
-            :snippet/update Dynamic
+            :router/change app.schema/RouteRequest
+            :snippet/create app.schema/SnippetDraft
+            :snippet/update app.schema/Snippet
             :snippet/remove String
             :snippet/count-usage String
           :examples $ []
           :schema $ quote EnumDef
+        'OpWireField $ %{} 'CodeEntry
+          :doc "|Fields of the legacy anonymous router-change wire map."
+          :code $ quote $ defunion OpWireField Tag String
+          :examples $ []
         'RouteRequest $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defstruct RouteRequest (:name Tag)
             :data $ Option String
@@ -964,6 +962,21 @@
               _ $ ServerOp :unknown raw
           :examples $ []
           :schema $ quote $ Fn Input (-> ServerOp) (:generics Input)
+          :tests $ [] $ %{} 'TestEntry (:name |typed-op-wire-roundtrip)
+            :code $ quote $ let
+                snippet $ app.schema/Snippet :id |a :title |t :content |c :edited-at 1 :copied-times 2
+                snippet-decoded $ app.schema/decode-server-op $ parse-cirru-edn
+                  format-cirru-edn $ app.schema/op-to-wire $ app.schema/Op :snippet/update snippet
+                draft $ app.schema/SnippetDraft :title |t :content |c
+                draft-decoded $ app.schema/decode-server-op $ parse-cirru-edn
+                  format-cirru-edn $ app.schema/op-to-wire $ app.schema/Op :snippet/create draft
+                route $ app.schema/RouteRequest :name :edit :data (Some |a) :router None :title None
+                route-decoded $ app.schema/decode-server-op $ parse-cirru-edn
+                  format-cirru-edn $ app.schema/op-to-wire $ app.schema/Op :router/change route
+              assert= (app.schema/ServerOp :snippet/update snippet) snippet-decoded
+              assert= (app.schema/ServerOp :snippet/create draft) draft-decoded
+              assert= (app.schema/ServerOp :router/change route) route-decoded
+            :tags $ #{} :unit
         'decode-sessions $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn decode-sessions (raw)
             filter-map-kv
@@ -1021,6 +1034,25 @@
             {} (:id nil) (:kind nil) (:text nil)
           :examples $ []
           :schema $ quote Dynamic
+        'op-to-wire $ %{} 'CodeEntry
+          :doc "|Wire adapter for remote operations: converts typed remote payloads to the legacy anonymous-enum map shape so the server keeps decoding the same text protocol."
+          :code $ quote $ defn op-to-wire (op)
+            match op
+              (:router/change route)
+                let
+                    base $ assert-type
+                      {} $ :name $ :name route
+                      Map Tag OpWireField
+                  :: :router/change $ match (:data route)
+                    (:some value) (assoc base :data value)
+                    (:none) base
+              (:snippet/create draft)
+                :: :snippet/create $ &struct:to-map draft
+              (:snippet/update snippet)
+                :: :snippet/update $ &struct:to-map snippet
+              _ op
+          :examples $ []
+          :schema $ quote $ Fn Op (-> AnyEnum) (:open :reflect)
         'route-to-wire $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defn route-to-wire (route)
             let
