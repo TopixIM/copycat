@@ -205,7 +205,7 @@
                       Some $ comp-reel (:reel-length store) ({})
                       , None
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Option schema/ClientStore) (-> respo.schema/Component) (:features :state)
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (Option schema/ClientStore) (-> respo.schema/Component) (:features :io :state)
         'comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-offline ()
             div
@@ -408,7 +408,7 @@
                   span $ {}
                 .render remove-plugin
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) app.schema/Snippet (-> respo.schema/Component) (:features :state)
+          :schema $ quote $ Fn (Map Tag Dynamic) app.schema/Snippet (-> respo.schema/Component) (:features :io :state)
         'comp-list $ %{} 'CodeEntry
           :doc "|Render typed snippets; the Respo cursor tree keeps heterogeneous branch keys and values, while snippet fields remain concrete."
           :code $ quote $ defcomp comp-list (states snippets query)
@@ -432,7 +432,7 @@
                           Map Tag Dynamic
                         :value entry
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map String app.schema/Snippet) String (-> respo.schema/Component) (:features :state)
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map String app.schema/Snippet) String (-> respo.schema/Component) (:features :io :state)
         'comp-no-snippets $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-no-snippets ()
             div
