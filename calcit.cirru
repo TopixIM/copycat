@@ -30,17 +30,14 @@
             let
                 location $ js-ffi.browser/location-snapshot
                 query $ shared/search-params-create $ :search location
-                host $
-                  shared/search-params-get query |host
-                  , .unwrap-or $ :hostname location
-                port $
-                  shared/search-params-get query |port
-                  , .unwrap-or $ str (:port config/site)
-              ws-connect! (str |ws:// host |: port)
-                {}
-                  :on-open $ fn (event) (simulate-login!)
-                  :on-close $ fn (event) (reset! *store nil) (println "|Lost connection!") &unit
-                  :on-data on-server-data
+                host $ .unwrap-or (shared/search-params-get query |host) (:hostname location)
+                port $ .unwrap-or (shared/search-params-get query |port)
+                  str $ :port config/site
+                opened $ fn (event) (simulate-login!) &unit
+                closed $ fn (event) (reset! *store nil) (println "|Lost connection!") &unit
+              ws-edn.client/ws-connect-typed! (str |ws:// host |: port)
+                ws-edn.client/ClientConfig :retry-base-ms None :retry-max-ms None :retry-jitter None :heartbeat-timeout-ms None :class-mapper $ {}
+                ws-edn.client/ClientCallbacks :on-open (Some opened) :on-close (Some closed) :on-error None :on-data $ Some on-server-data
               , &unit
           :examples $ []
           :schema $ quote $ Fn (-> Unit) (:features :io :js-ffi :state)
@@ -208,7 +205,7 @@
                       Some $ comp-reel (:reel-length store) ({})
                       , None
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Option schema/ClientStore) (-> respo.schema/Component)
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (Option schema/ClientStore) (-> respo.schema/Component) (:features :io :state)
         'comp-offline $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-offline ()
             div
@@ -411,7 +408,7 @@
                   span $ {}
                 .render remove-plugin
           :examples $ []
-          :schema $ quote $ Fn (Map Tag Dynamic) app.schema/Snippet (-> respo.schema/Component)
+          :schema $ quote $ Fn (Map Tag Dynamic) app.schema/Snippet (-> respo.schema/Component) (:features :io :state)
         'comp-list $ %{} 'CodeEntry
           :doc "|Render typed snippets; the Respo cursor tree keeps heterogeneous branch keys and values, while snippet fields remain concrete."
           :code $ quote $ defcomp comp-list (states snippets query)
@@ -435,7 +432,7 @@
                           Map Tag Dynamic
                         :value entry
           :examples $ []
-          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map String app.schema/Snippet) String (-> respo.schema/Component)
+          :schema $ quote $ Fn (Map Dynamic Dynamic) (Map String app.schema/Snippet) String (-> respo.schema/Component) (:features :io :state)
         'comp-no-snippets $ %{} 'CodeEntry (:doc |)
           :code $ quote $ defcomp comp-no-snippets ()
             div
